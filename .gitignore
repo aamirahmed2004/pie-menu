@@ -1,7 +1,9 @@
 Library
 Logs
 obj
+Temp
 UserSettings
 Unity*
 Assembly*
+.vs
 *.sln
