@@ -1,21 +1,25 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = System.Random;
 
 public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject target;
-    [SerializeField] private int numTargets;
+    [SerializeField] [Range(1,21)] private int targetsPerCorner;
 
     private List<Target> targetList = new();
     private Vector2 screenCentre;
     private Camera mainCamera;
 
-    private string[] appNames = { "Mail", "Calendar", "Reddit", "Discord", "File Explorer", "Recycle Bin",
-                                  "Spotify", "Chegg", "Edge", "Rocket League", "Notepad", "Unity", "Calculator" };
+    private const float TargetWidth = 40.0f, TargetHeight = 50.0f;
+    private const float TargetSpacing = 1.5f;
+    private string[] appNames = { "TaskFlow Pro", "NoteHaven", "DocuMaster", "QuickNote", "PlanEase", "Taskify", "PaperTrail", "MemoGraph", "TimeLine", "FocusBox", "SprintTrack", "ZenDoc", "ProWriter", "StudySpace", "QuickOffice", "PrintMaster", "WorkBench", "FileForge", "ClearWrite", "ProDesk", "SnapCraft", "PixelCraftr", "IdeaScribe", "SketchBlend", "ColorPulse", "DesignForge", "Artify", "VibeDraw", "VectorPrime", "PhotoLab", "SoundCraftr", "ClipStudio", "MindWave", "Animatrix", "LightBurst", "FlowSketch", "MotionDeck", "CanvasNova", "ImageForge", "ShapeWave", "CodeForge", "DevPad", "GitHub Pro", "ScriptRunner", "BuildSphere", "CompilerX", "CodeFlow", "DebugMaster", "DevSync", "TerminalX", "CloudIDE", "SnapBuild", "CodeSmith", "DevDesk", "AppSync", "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
 
     private void Start()
     {
@@ -27,65 +31,82 @@ public class TargetManager : MonoBehaviour
     
     private void SpawnTargets()
     {
-        //List<Vector3> points = GenerateTargetGrid(numTargets);
-        float targetWidth = 37.0f, targetHeight = 50.0f;
-        float padding = 1.5f;
-        int gridColumns = (int) (Screen.width / (targetWidth * padding));
-        int gridRows = (int) (Screen.height / (targetHeight + 10.0f));
-
-        Debug.Log(gridColumns);
-        Debug.Log(gridRows);
-
-        var rand = new Random();
-        for (float y = -gridRows/2.0f; y < gridRows/2.0f; y++)
+        var gridColumns = (int) (Screen.width / (TargetWidth * TargetSpacing));
+        var gridRows = (int) (Screen.height / (TargetHeight * TargetSpacing));
+        
+        var appIndex = 0;
+        for (var q = 1; q <= 4; q++)
         {
-            for (float x = -gridColumns/2.0f; x < gridColumns/2.0f; x++)
+            var targetCount = 0;
+            List<Vector2> positions = new();
+            if (q > 2)
             {
-                var targetObject = Instantiate(target, new Vector3(x + 0.625f, y, 1f) * padding, Quaternion.identity, transform);
-                targetObject.transform.localScale = Vector3.one;
-                targetObject.transform.parent = mainCamera.transform;
-                
-                var label = targetObject.GetComponentInChildren<TextMeshPro>();
-                label.text = appNames[rand.Next(appNames.Length)];
+                for (var y = -gridRows / 4.0f; y < gridRows / 4.0f; y++)
+                {
+                    if (q % 2 == 0)
+                    {
+                        for (var x = gridColumns / 4.0f; x > -gridColumns / 4.0f; x--)
+                        {
+                            positions.Add(new Vector2(x, y));
+                        }
+                    }
+                    else
+                    {
+                        for (var x = -gridColumns / 4.0f; x < gridColumns / 4.0f; x++)
+                        {
+                            positions.Add(new Vector2(x, y));
+                        }
+                    }
+                }
+            } else 
+            {
+                for (var y = gridRows / 4.0f; y > -gridRows / 4.0f; y--)
+                {
+                    if (q % 2 == 0)
+                    {
+                        for (var x = gridColumns / 4.0f; x > -gridColumns / 4.0f; x--)
+                        {
+                            positions.Add(new Vector2(x, y));
+                        }
+                    }
+                    else
+                    {
+                        for (var x = -gridColumns / 4.0f; x < gridColumns / 4.0f; x++)
+                        {
+                            positions.Add(new Vector2(x, y));
+                        }
+                    }
+                }
+            } 
+
+            foreach (var position in positions)
+            {
+                if (targetCount > targetsPerCorner) continue;
+                ++targetCount;
+                SpawnTarget(position.x,position.y,q,gridColumns, appIndex);
+                appIndex++;
+                if (appIndex > appNames.Length) appIndex = 0;
             }
         }
     }
-
-    List<Vector3> GenerateTargetGrid(int targetsPerCorner = 1)
+    
+    private void SpawnTarget(float x, float y, int q, int gridColumns, int appIndex)
     {
-        List<Vector3> pointList = new();
-        var sprite = target.GetComponentInChildren<SpriteRenderer>();
-        float targetBoundsX = sprite.sprite.bounds.size.x / sprite.sprite.pixelsPerUnit,
-            targetBoundsY = sprite.sprite.bounds.size.y / sprite.sprite.pixelsPerUnit;
-
-        for (var quarter = 1; quarter <= 4; quarter++)
-        {
-            float xStart = quarter % 2 == 0
-                ? Screen.width / 2.0f
-                : 0;
-            xStart += targetBoundsX;
-            float yStart = quarter > 2
-                ? Screen.height / 2.0f
-                : Screen.height;
-            yStart += targetBoundsY;
-
-            var targetCount = 0;
-            for (var x = 1; x <= 3; x++)
-            {
-                for (var y = 1; y <= 3; y++)
-                {
-                    if (targetCount > targetsPerCorner) continue;
-                    pointList.Add(new Vector3(
-                        xStart + (x * targetBoundsX),
-                        yStart - (y * targetBoundsY),
-                        1f
-                    ));
-                    targetCount++;
-                }
-            }
-        }
-
-        return pointList;
+        var xModifier = q % 2 == 0 ? 1 : -1;
+        var yModifier = q <= 2 ? 1 : -1;
+        var pos = new Vector3(
+            x + xModifier * (gridColumns / 4.0f) + (q % 2 == 0 ? TargetWidth / TargetHeight / 8 : 0), 
+            y + yModifier * (gridColumns / 8.0f) - TargetWidth / TargetHeight / (q <= 2 ? 0.8f : 3f), 
+            1f
+        ) * TargetSpacing;
+                    
+        var targetObject = Instantiate(target, pos, Quaternion.identity, transform);
+        targetObject.transform.localScale = Vector3.one;
+        targetObject.transform.parent = mainCamera.transform;
+                
+        var label = targetObject.GetComponentInChildren<TextMeshPro>();
+        label.text = appNames[appIndex];
+        targetList.Add(targetObject.GetComponent<Target>());
     }
 
 }
