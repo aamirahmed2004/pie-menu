@@ -6,8 +6,8 @@ using UnityEngine;
 public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject target;
-    [SerializeField] [Range(1,100)] private int numTargets;
-    [SerializeField] [Range(1,10)] private float targetScale;
+    [SerializeField] [Range(1,200)] private int numTargets;
+    [SerializeField] [Range(0.1f,10)] private float targetScale;
     
     private List<Target> targetList = new();
     private List<Vector2> targetPositions = new();
