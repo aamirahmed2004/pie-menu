@@ -7,13 +7,13 @@ public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject target;
     [SerializeField] [Range(1,100)] private int numTargets;
-
+    [SerializeField] [Range(1,10)] private float targetScale;
+    
     private List<Target> targetList = new();
     private List<Vector2> targetPositions = new();
     private Camera mainCamera;
     private float worldWidth, worldHeight;
     private float targetWidth, targetHeight;
-    
     private const float TargetSpacing = 1.5f;
     private string[] appNames = { "TaskFlow Pro", "NoteHaven", "DocuMaster", "QuickNote", "PlanEase", "Taskify", "PaperTrail", "MemoGraph", "TimeLine", "FocusBox", "SprintTrack", "ZenDoc", "ProWriter", "StudySpace", "QuickOffice", "PrintMaster", "WorkBench", "FileForge", "ClearWrite", "ProDesk", "SnapCraft", "PixelCraftr", "IdeaScribe", "SketchBlend", "ColorPulse", "DesignForge", "Artify", "VibeDraw", "VectorPrime", "PhotoLab", "SoundCraftr", "ClipStudio", "MindWave", "Animatrix", "LightBurst", "FlowSketch", "MotionDeck", "CanvasNova", "ImageForge", "ShapeWave", "CodeForge", "DevPad", "GitHub Pro", "ScriptRunner", "BuildSphere", "CompilerX", "CodeFlow", "DebugMaster", "DevSync", "TerminalX", "CloudIDE", "SnapBuild", "CodeSmith", "DevDesk", "AppSync", "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
 
@@ -31,6 +31,7 @@ public class TargetManager : MonoBehaviour
     private void GetTargetSize()
     {
         var sampleTarget = Instantiate(target, new Vector3(0,0,0), Quaternion.identity);
+        sampleTarget.transform.localScale = Vector3.one * targetScale;
         sampleTarget.name = "SampleTarget";
         sampleTarget.transform.parent = mainCamera.transform;
         Canvas.ForceUpdateCanvases();
@@ -45,8 +46,8 @@ public class TargetManager : MonoBehaviour
     private void GenerateTargetPositions()
     {
         targetPositions.Clear();
-        var columns = (int) (worldWidth / TargetSpacing);
-        var rows = (int) (worldHeight / TargetSpacing);
+        var columns = (int) (worldWidth / (TargetSpacing * targetScale));
+        var rows = (int) (worldHeight / (TargetSpacing * targetScale));
         for (var y = (int) -Math.Floor(rows/2.0f); y < (int) Math.Floor(rows/2.0f); y++)
         {
             for (var x = -columns/2; x < columns/2; x++)
@@ -85,10 +86,10 @@ public class TargetManager : MonoBehaviour
             x,
             y,
             1f
-        ) * TargetSpacing;
+        ) * (TargetSpacing * targetScale);
                     
         var targetObject = Instantiate(target, pos, Quaternion.identity, transform);
-        targetObject.transform.localScale = Vector3.one;
+        targetObject.transform.localScale = Vector3.one * targetScale;
         targetObject.transform.parent = mainCamera.transform;
         targetObject.name = "Target" + appIndex;
                 
