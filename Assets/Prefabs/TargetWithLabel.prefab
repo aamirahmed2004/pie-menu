@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.06, y: 0.42}
-  m_SizeDelta: {x: 20, y: 5}
+  m_AnchoredPosition: {x: 0, y: -0.75}
+  m_SizeDelta: {x: 1, y: 0.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &9182891537587204441
 MeshRenderer:
@@ -126,8 +126,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 4
-  m_fontSizeBase: 4
+  m_fontSize: 2
+  m_fontSizeBase: 2
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -196,7 +196,7 @@ Transform:
   m_GameObject: {fileID: 9069779975850492026}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.7469803, y: -1.7026746, z: -0.007228421}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -214,15 +214,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 4709680825464143610, guid: 0d5b511235b786c4bbdfe17600f801cd, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4709680825464143610, guid: 0d5b511235b786c4bbdfe17600f801cd, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.25
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4709680825464143610, guid: 0d5b511235b786c4bbdfe17600f801cd, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.007228421
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4709680825464143610, guid: 0d5b511235b786c4bbdfe17600f801cd, type: 3}
       propertyPath: m_LocalRotation.w

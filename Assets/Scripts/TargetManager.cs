@@ -1,4 +1,4 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,78 +6,96 @@ using UnityEngine;
 public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject target;
-    [SerializeField] private int numTargets;
-
+    [SerializeField] [Range(1,200)] private int numTargets;
+    [SerializeField] [Range(0.1f,10)] private float targetScale;
+    
     private List<Target> targetList = new();
-    private Vector2 screenCentre;
+    private List<Vector2> targetPositions = new();
     private Camera mainCamera;
-
-    private string[] appNames = { "Mail", "Calendar", "Reddit", "Discord", "File Explorer", "Recycle Bin",
-                                  "Spotify", "Chegg", "Edge", "Rocket League", "Notepad", "Unity", "Calculator" };
+    private float worldWidth, worldHeight;
+    private float targetWidth, targetHeight;
+    private const float TargetSpacing = 1.5f;
+    private string[] appNames = { "TaskFlow Pro", "NoteHaven", "DocuMaster", "QuickNote", "PlanEase", "Taskify", "PaperTrail", "MemoGraph", "TimeLine", "FocusBox", "SprintTrack", "ZenDoc", "ProWriter", "StudySpace", "QuickOffice", "PrintMaster", "WorkBench", "FileForge", "ClearWrite", "ProDesk", "SnapCraft", "PixelCraftr", "IdeaScribe", "SketchBlend", "ColorPulse", "DesignForge", "Artify", "VibeDraw", "VectorPrime", "PhotoLab", "SoundCraftr", "ClipStudio", "MindWave", "Animatrix", "LightBurst", "FlowSketch", "MotionDeck", "CanvasNova", "ImageForge", "ShapeWave", "CodeForge", "DevPad", "GitHub Pro", "ScriptRunner", "BuildSphere", "CompilerX", "CodeFlow", "DebugMaster", "DevSync", "TerminalX", "CloudIDE", "SnapBuild", "CodeSmith", "DevDesk", "AppSync", "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
 
     private void Start()
     {
         mainCamera = Camera.main;
-        screenCentre = new Vector2(Screen.width/2, Screen.height / 2);
+        mainCamera.orthographicSize = 15.0f / ((float) Screen.width / Screen.height);
+        worldHeight = mainCamera.orthographicSize * 2.0f;
+        worldWidth = worldHeight * mainCamera.aspect;
+        GetTargetSize();
+        GenerateTargetPositions();
         SpawnTargets();
-
+    }
+    
+    private void GetTargetSize()
+    {
+        var sampleTarget = Instantiate(target, new Vector3(0,0,0), Quaternion.identity);
+        sampleTarget.transform.localScale = Vector3.one * targetScale;
+        sampleTarget.name = "SampleTarget";
+        sampleTarget.transform.parent = mainCamera.transform;
+        Canvas.ForceUpdateCanvases();
+        var targetSprite = sampleTarget.GetComponentInChildren<SpriteRenderer>();
+        var targetText = sampleTarget.GetComponentInChildren<TextMeshPro>();
+        targetWidth = targetSprite.sprite.bounds.size.x;
+        targetHeight = targetSprite.sprite.bounds.size.y + targetText.bounds.size.y;
+        Destroy(sampleTarget);
+        Canvas.ForceUpdateCanvases();
     }
 
-    private void SpawnTargets()
+    private void GenerateTargetPositions()
     {
-        List<Vector3> points = GenerateRandomPoints();
-        for (int i = 0; i < numTargets; i++)
+        targetPositions.Clear();
+        var columns = (int) (worldWidth / (TargetSpacing * targetScale));
+        var rows = (int) (worldHeight / (TargetSpacing * targetScale));
+        for (var y = (int) -Math.Floor(rows/2.0f); y < (int) Math.Floor(rows/2.0f); y++)
         {
-            GameObject targetObject = Instantiate(target, points[i], Quaternion.identity, transform);
-            targetObject.transform.localScale = Vector3.one;
-
-            //TextMeshPro label = targetObject.GetComponent<TextMeshPro>();
-            //label.text = appNames[i % appNames.Length];
-        }
-    }
-
-    List<Vector3> GenerateRandomPoints()
-    {
-        List<Vector3> pointList = new();
-        for (int i = 0; i < numTargets; i++)
-        {
-            float randomX = Random.Range(0, Screen.width);
-            float randomY = Random.Range(0, Screen.height);
-            float z = 10f;
-            Vector3 randomScreenPoint = new(randomX, randomY, z);
-            Vector3 randomWorldPoint = mainCamera.ScreenToWorldPoint(randomScreenPoint);
-            pointList.Add(randomWorldPoint);
-        }
-        return pointList;
-    }
-
-    private List<int> GenerateCornerCounts()
-    {
-        List<int> counts = new List<int> { 1, 1, 1, 1 }; // Minimum 1 icon in each corner
-        int remainingTargets = numTargets - 4; // Subtract the 1 in each corner
-
-        // Distribute remaining icons randomly, up to 5 per corner
-        for (int i = 0; i < 4; i++)
-        {
-            int additionalTargets = Random.Range(0, Mathf.Min(remainingTargets, 4)); // Max 5 per corner
-            counts[i] += additionalTargets;
-            remainingTargets -= additionalTargets;
-        }
-
-        // If any icons are left distribute them among corners
-        while (remainingTargets > 0)
-        {
-            for (int i = 0; i < 4 && remainingTargets > 0; i++)
+            for (var x = -columns/2; x < columns/2; x++)
             {
-                if (counts[i] < 5)
-                {
-                    counts[i]++;
-                    remainingTargets--;
-                }
+                var xPos = x + targetWidth / 2;
+                var yPos = y + targetHeight / 2; 
+                targetPositions.Add(new Vector2(xPos,yPos));
             }
         }
-
-        return counts;
+        targetPositions.Sort((posA, posB) =>
+        {
+            var disA = (new Vector2(0,0) - posA).magnitude;
+            var disB = (new Vector2(0,0) - posB).magnitude;
+            return disB.CompareTo(disA);
+        });
+    }
+    
+    private void SpawnTargets()
+    {
+        var appIndex = 0;
+        var targetCount = 0;
+        
+        foreach (var position in targetPositions)
+        {
+            if (appIndex >= appNames.Length) appIndex = 0;
+            if (targetCount >= numTargets) continue;
+            ++targetCount;
+            SpawnTarget(position.x, position.y, appIndex);
+            appIndex++;
+        }
+    }
+    
+    private void SpawnTarget(float x, float y, int appIndex)
+    {
+        var pos = new Vector3(
+            x,
+            y,
+            1f
+        ) * (TargetSpacing * targetScale);
+                    
+        var targetObject = Instantiate(target, pos, Quaternion.identity, transform);
+        targetObject.transform.localScale = Vector3.one * targetScale;
+        targetObject.transform.parent = mainCamera.transform;
+        targetObject.name = "Target" + appIndex;
+                
+        var label = targetObject.GetComponentInChildren<TextMeshPro>();
+        label.text = appNames[appIndex];
+        targetList.Add(targetObject.GetComponent<Target>());
     }
 
 }
