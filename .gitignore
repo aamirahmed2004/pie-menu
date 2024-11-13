@@ -7,3 +7,5 @@ Unity*
 Assembly*
 .vs
 *.sln
+.vscode/
+*.meta
