@@ -6,10 +6,7 @@ using UnityEngine;
 public class CircleManager : MonoBehaviour
 {
     [SerializeField] private GameObject Segment;
-    
     private List<Segment> segmentList = new();
-    
-    // public LineRenderer circleRenderer;
     
     // Start is called before the first frame update
     void Start()
@@ -23,10 +20,10 @@ public class CircleManager : MonoBehaviour
     {
         
     }
-
     
     void DrawCircleWithSegments(int steps, float radius, int numSegments = 8)
     {
+        
         // circleRenderer.positionCount = steps + 1;
         int stepsPerSegments = steps / numSegments;
         for (int segmentNumber = 0; segmentNumber < numSegments; segmentNumber++)
@@ -35,11 +32,7 @@ public class CircleManager : MonoBehaviour
             segmentList.Add(segment.GetComponent<Segment>());
             segmentList[segmentNumber].DrawCircleSegment(
                 steps, stepsPerSegments, radius, segmentNumber
-            );
+            ); // store this for the future just in case
         }
-        
-        
     }
-
-    
 }
