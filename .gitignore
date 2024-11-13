@@ -7,3 +7,6 @@ Unity*
 Assembly*
 .vs
 *.sln
+.idea/
+# ignore all metas
+*.meta
