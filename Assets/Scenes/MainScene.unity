@@ -167,7 +167,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   target: {fileID: 9069779975850492026, guid: 0f4561498d80b914d9fb686f36e540e2, type: 3}
-  numTargets: 100
+  numTargets: 10
   targetScale: 1
 --- !u!1 &570569290
 GameObject:
@@ -263,10 +263,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 570569290}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e33cbe36b9db39641a180e8e1adb72e7, type: 3}
+  m_Script: {fileID: 11500000, guid: aeca1b69324c8ab45bc83ab2418b4871, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  radius: 0.1
+  radius: 0
   contactFilter:
     useTriggers: 0
     useLayerMask: 0

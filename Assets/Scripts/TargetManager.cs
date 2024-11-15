@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
+using Random = System.Random;
 
 public class TargetManager : MonoBehaviour
 {
@@ -10,7 +12,7 @@ public class TargetManager : MonoBehaviour
     [SerializeField] [Range(0.1f,10)] private float targetScale;
     
     private List<Target> targetList = new();
-    private List<Vector2> targetPositions = new();
+    private List<Vector3> targetPositions = new();
     private Camera mainCamera;
     private float worldWidth, worldHeight;
     private float targetWidth, targetHeight;
@@ -52,15 +54,31 @@ public class TargetManager : MonoBehaviour
         {
             for (var x = -columns/2; x < columns/2; x++)
             {
+                var xval = x >= 0;
+                var yval = y >= 0;
+                var quadrant = 1;
+                if (xval && yval)
+                {
+                    quadrant = 2;
+                } 
+                else if (!xval && !yval)
+                {
+                    quadrant = 3;
+                }
+                else if (xval)
+                {
+                    quadrant = 4;
+                }
                 var xPos = x + targetWidth / 2;
                 var yPos = y + targetHeight / 2; 
-                targetPositions.Add(new Vector2(xPos,yPos));
+                targetPositions.Add(new Vector3(xPos,yPos,quadrant));
             }
         }
         targetPositions.Sort((posA, posB) =>
         {
-            var disA = (new Vector2(0,0) - posA).magnitude;
-            var disB = (new Vector2(0,0) - posB).magnitude;
+            // Divide by aspect ratio to make more of an ovular shape to target distribution
+            var disA = (new Vector2(0,0) - new Vector2(posA.x/mainCamera.aspect,posA.y)).magnitude;
+            var disB = (new Vector2(0,0) - new Vector2(posB.x/mainCamera.aspect,posB.y)).magnitude;
             return disB.CompareTo(disA);
         });
     }
@@ -68,15 +86,27 @@ public class TargetManager : MonoBehaviour
     private void SpawnTargets()
     {
         var appIndex = 0;
-        var targetCount = 0;
-        
-        foreach (var position in targetPositions)
+
+        var rand = new Random();
+        for (var quadrant = 1; quadrant <= 4; quadrant++)
         {
-            if (appIndex >= appNames.Length) appIndex = 0;
-            if (targetCount >= numTargets) continue;
-            ++targetCount;
-            SpawnTarget(position.x, position.y, appIndex);
-            appIndex++;
+            var q = targetPositions.Where(v => (int) v.z == quadrant).ToList();
+            var targetCount = 0;
+            while (targetCount < numTargets)
+            {
+                if (appIndex >= appNames.Length) appIndex = 0;
+                var position = q[0];
+                // if (rand.Next(0, 4) == 2)
+                // {
+                //     q.RemoveAt(0);
+                //     q.Add(position);
+                //     continue;
+                // }
+                SpawnTarget(position.x, position.y, appIndex);
+                q.RemoveAt(0);
+                targetCount++;
+                appIndex++;
+            }
         }
     }
     

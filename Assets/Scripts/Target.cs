@@ -58,6 +58,13 @@ public class Target : MonoBehaviour
     public IEnumerator DestroyGameObject(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-        Destroy(gameObject);
+        if (gameObject.transform.parent.IsChildOf(Camera.main?.transform))
+        {
+            Destroy(gameObject.transform.parent.gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }
