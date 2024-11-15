@@ -4,13 +4,14 @@ using UnityEngine;
 
 public class PointCursor : MonoBehaviour
 {
-    [SerializeField] private float radius;
-    [SerializeField] private ContactFilter2D contactFilter;
-    // Start is called before the first frame update
+    // [SerializeField] private float radius;
+    // [SerializeField] private ContactFilter2D contactFilter;
 
     private Camera mainCam;
-    private List<Collider2D> results = new();
+    private Collider2D detectedCollider = null;
     private Collider2D previousDetectedCollider = new();
+
+    // Start is called before the first frame update
     void Start()
     {
         mainCam = Camera.main;
@@ -19,37 +20,36 @@ public class PointCursor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        Collider2D detectedCollider = null;
-
-        Physics2D.OverlapCircle(transform.position, radius, contactFilter, results);
-
+        //Get Mouse Position on screen, and get the corresponding position in a Vector3 World Co-Ordinate
         Vector3 mousePosition = Input.mousePosition;
 
+        //Change the z position so that cursor does not get occluded by the camera
         mousePosition.z += 9f;
         mousePosition.x = Mathf.Clamp(mousePosition.x, 0f, Screen.width);
         mousePosition.y = Mathf.Clamp(mousePosition.y, 0f, Screen.height);
+
         transform.position = mainCam.ScreenToWorldPoint(mousePosition);
 
-        if(results.Count < 1){
-            UnHoverPreviousTarget();
-            return;
-        }
-        else if(results.Count > 1){
-            UnHoverPreviousTarget();
-            Debug.LogWarning("Too many targets in area");
-            return;
-        }
-        else{
-            detectedCollider = results[0];
+        // Casting a ray straight down, below the cursor
+        Collider2D detectedCollider = Physics2D.OverlapPoint(transform.position);
+
+        if (detectedCollider != null)
+        {
+            this.detectedCollider = detectedCollider;
             UnHoverPreviousTarget(detectedCollider);
             HoverTarget(detectedCollider);
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                if (detectedCollider.TryGetComponent(out Target target) && target.IsGoalTarget()) SelectTarget(detectedCollider);      
+            }
+        }
+        else
+        {
+            UnHoverPreviousTarget();
         }
 
-        if(Input.GetMouseButtonDown(0)){
-            SelectTarget(detectedCollider);
-        }
-
-        previousDetectedCollider = detectedCollider;
+        previousDetectedCollider = this.detectedCollider;
     }   
 
     private void HoverTarget(Collider2D collider){

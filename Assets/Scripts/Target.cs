@@ -1,6 +1,6 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class Target : MonoBehaviour
 {
@@ -9,11 +9,25 @@ public class Target : MonoBehaviour
     private Color originalColor;
     private bool canHover;
 
+    private bool isGoal = false;
+
     void Start()
     {
         sprite = GetComponent<SpriteRenderer>();
         originalColor = sprite.color;  // Store the original color
         StartCoroutine(EnableHoverAfterDelay(0.3f));
+    }
+
+    public void SetGoalTarget()
+    {
+        isGoal = true;
+        Debug.Log("Set to Goal!");
+        ChangeColor(Color.red);
+    }
+
+    public bool IsGoalTarget()
+    {
+        return isGoal;
     }
 
     public void OnHoverEnter()
@@ -44,20 +58,25 @@ public class Target : MonoBehaviour
         originalColor = color;  // Update the original color if the color is changed
     }
 
-    public bool IsRed()
-    {
-        return originalColor == Color.red;
-    }
-
     private IEnumerator EnableHoverAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
         canHover = true;
     }
 
+    // Deletes the Target GameObject, the Label GameObject, and the parent TargetWithLabel's GameObject after "seconds" seconds
     public IEnumerator DestroyGameObject(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-        Destroy(gameObject);
+
+        // Note that the parent GameObject is TargetWithLabel, which has children Target (this) and Label.
+        // Find the Label gameObject in the children of the parent (i.e. should be a sibling component, but I couldnt find a function to directly look for siblings)
+        TextMeshPro label = this.transform.parent.GetComponentInChildren<TextMeshPro>();
+        if (label != null) Destroy(label.gameObject);
+
+        Destroy(this.gameObject);
+
+        // Delete the parent
+        Destroy(this.transform.parent.gameObject);
     }
 }
