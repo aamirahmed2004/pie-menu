@@ -7,35 +7,55 @@ using Random = System.Random;
 
 public class TargetManager : MonoBehaviour
 {
-    [SerializeField] private GameObject target;
-    [SerializeField] [Range(1,200)] private int numTargets;
+    [SerializeField] private GameObject targetWithLabel;
+    // [SerializeField] [Range(1,200)] private int numTargets;
     [SerializeField] [Range(0.1f,10)] private float targetScale;
-    
+
+    private int numTargets = 25;
+
     private List<Target> targetList = new();
     private List<Vector3> targetPositions = new();
     private Camera mainCamera;
+    private Vector3 screenCentre;
+    private GameObject startTargetObject;
+
     private float worldWidth, worldHeight;
     private float targetWidth, targetHeight;
     private const float TargetSpacing = 1.5f;
-    private string[] appNames = { "TaskFlow Pro", "NoteHaven", "DocuMaster", "QuickNote", "PlanEase", "Taskify", "PaperTrail", "MemoGraph", "TimeLine", "FocusBox", "SprintTrack", "ZenDoc", "ProWriter", "StudySpace", "QuickOffice", "PrintMaster", "WorkBench", "FileForge", "ClearWrite", "ProDesk", "SnapCraft", "PixelCraftr", "IdeaScribe", "SketchBlend", "ColorPulse", "DesignForge", "Artify", "VibeDraw", "VectorPrime", "PhotoLab", "SoundCraftr", "ClipStudio", "MindWave", "Animatrix", "LightBurst", "FlowSketch", "MotionDeck", "CanvasNova", "ImageForge", "ShapeWave", "CodeForge", "DevPad", "GitHub Pro", "ScriptRunner", "BuildSphere", "CompilerX", "CodeFlow", "DebugMaster", "DevSync", "TerminalX", "CloudIDE", "SnapBuild", "CodeSmith", "DevDesk", "AppSync", "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
+    private string[] appNames = { "TaskFlow Pro", "NoteHaven", "DocuMaster", "QuickNote", "PlanEase", 
+                                    "Taskify", "PaperTrail", "MemoGraph", "TimeLine", "FocusBox", "SprintTrack", "ZenDoc", "ProWriter", 
+                                    "StudySpace", "QuickOffice", "PrintMaster", "WorkBench", "FileForge", "ClearWrite", "ProDesk", "SnapCraft", 
+                                    "PixelCraftr", "IdeaScribe", "SketchBlend", "ColorPulse", "DesignForge", "Artify", "VibeDraw", "VectorPrime", 
+                                    "PhotoLab", "SoundCraftr", "ClipStudio", "MindWave", "Animatrix", "LightBurst", "FlowSketch", "MotionDeck", 
+                                    "CanvasNova", "ImageForge", "ShapeWave", "CodeForge", "DevPad", "GitHub Pro", "ScriptRunner", "BuildSphere", "CompilerX", 
+                                    "CodeFlow", "DebugMaster", "DevSync", "TerminalX", "CloudIDE", "SnapBuild", "CodeSmith", "DevDesk", "AppSync", 
+                                    "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", 
+                                    "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", 
+                                    "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
 
-    private void Start()
+    // Awake() is called before any other GameObject's Start() 
+    private void Awake()
     {
         mainCamera = Camera.main;
         mainCamera.orthographicSize = 15.0f / ((float) Screen.width / Screen.height);
+        
+        screenCentre = new Vector3(Screen.width / 2, Screen.height / 2, 1f);
+
         worldHeight = mainCamera.orthographicSize * 2.0f;
         worldWidth = worldHeight * mainCamera.aspect;
         GetTargetSize();
         GenerateTargetPositions();
-        SpawnTargets();
+        // SpawnTargets();
     }
-    
+
     private void GetTargetSize()
     {
-        var sampleTarget = Instantiate(target, new Vector3(0,0,0), Quaternion.identity);
+        var sampleTarget = Instantiate(targetWithLabel, new Vector3(0,0,0), Quaternion.identity);
+
         sampleTarget.transform.localScale = Vector3.one * targetScale;
         sampleTarget.name = "SampleTarget";
         sampleTarget.transform.parent = mainCamera.transform;
+
         Canvas.ForceUpdateCanvases();
         var targetSprite = sampleTarget.GetComponentInChildren<SpriteRenderer>();
         var targetText = sampleTarget.GetComponentInChildren<TextMeshPro>();
@@ -83,7 +103,7 @@ public class TargetManager : MonoBehaviour
         });
     }
     
-    private void SpawnTargets()
+    public void SpawnTargets()
     {
         var appIndex = 0;
 
@@ -118,14 +138,53 @@ public class TargetManager : MonoBehaviour
             1f
         ) * (TargetSpacing * targetScale);
                     
-        var targetObject = Instantiate(target, pos, Quaternion.identity, transform);
+        var targetObject = Instantiate(targetWithLabel, pos, Quaternion.identity, transform);
         targetObject.transform.localScale = Vector3.one * targetScale;
         targetObject.transform.parent = mainCamera.transform;
-        targetObject.name = "Target" + appIndex;
+        targetObject.tag = "Target";
+
+        // Sample logic for selecting goal target. 
+        if (appIndex == 0)
+        {
+            Target target = targetObject.GetComponentInChildren<Target>();
+            target.SetGoalTarget();
+        }
                 
         var label = targetObject.GetComponentInChildren<TextMeshPro>();
         label.text = appNames[appIndex];
         targetList.Add(targetObject.GetComponent<Target>());
     }
 
+    public void SpawnStartTarget()
+    {
+        Vector3 worldCenter = mainCamera.ScreenToWorldPoint(screenCentre);
+        startTargetObject = Instantiate(targetWithLabel, worldCenter, Quaternion.identity, transform);
+        startTargetObject.transform.localScale = Vector3.one * targetScale;
+        startTargetObject.tag = "Target";
+
+        Target target = startTargetObject.GetComponentInChildren<Target>();
+        target.SetGoalTarget();
+        
+        var label = startTargetObject.GetComponentInChildren<TextMeshPro>();
+        label.text = "Start!";
+    }
+    public GameObject[] GetAllTargets()
+    {
+        return GameObject.FindGameObjectsWithTag("Target");
+    }
+
+    public void DestroyAllTargets()
+    {
+        GameObject[] targetWithLabelObjects = GetAllTargets();
+        foreach (GameObject targetWithLabel in targetWithLabelObjects)
+        {
+            Destroy(targetWithLabel);
+        }
+    }
+
+    public int GetNumTotalTargets()
+    {
+        return this.numTargets;
+    }
 }
+
