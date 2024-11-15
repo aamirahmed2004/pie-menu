@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class StudyManager : MonoBehaviour
 {
@@ -40,6 +42,7 @@ public class StudyManager : MonoBehaviour
     {
         numTotalTargets = targetManager.GetNumTotalTargets();
         targetManager.SpawnStartTarget();
+        Debug.Log(targetManager.GetNumTotalTargets());
     }
 
     private void Update()
@@ -89,7 +92,7 @@ public struct TrialConditions       // These are the factors that affect how the
 {
     public float amplitude;                   // Distance from the center
     public GroupingType groupingType;         // Random zones or predefined "ordered" zones
-    public float EWToW_Ratio;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
+    public float TargetToHitboxRatio;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
 }
 
 public enum CursorType
@@ -114,25 +117,25 @@ public enum GroupingType
 public class StudySettings
 {
     public List<float> amplitudes;
-    public List<float> EWToW_Ratios; // denotes the constant scaling factor based on which we increase both the gap between icons and the hitbox of each icon
+    public List<float> TargetToHitboxRatios; // denotes the constant scaling factor based on which we increase both the gap between icons and the hitbox of each icon
     // public List<bool> recent; idk if we're going with this for factor
     public List<GroupingType> groupingTypes;
     public CursorType cursorType;
     public int repetitions;
 
-    public StudySettings(List<float> amplitudes, List<float> EWToW_Ratios, List<GroupingType> groupingTypes, CursorType cursorType, int repetitions)
+    public StudySettings(List<float> amplitudes, List<float> targetToHitboxRatios, List<GroupingType> groupingTypes, CursorType cursorType, int repetitions)
     {
         this.amplitudes = amplitudes;
-        this.EWToW_Ratios = EWToW_Ratios;
+        this.TargetToHitboxRatios = targetToHitboxRatios;
         this.groupingTypes = groupingTypes;
         this.cursorType = cursorType;
         this.repetitions = repetitions;
     }
     // Default constructor with 1 repetition
-    public StudySettings(List<float> amplitudes, List<float> EWToW_Ratios, List<GroupingType> groupingTypes, CursorType cursorType)
+    public StudySettings(List<float> amplitudes, List<float> targetToHitboxRatios, List<GroupingType> groupingTypes, CursorType cursorType)
     {
         this.amplitudes = amplitudes;
-        this.EWToW_Ratios = EWToW_Ratios;
+        this.TargetToHitboxRatios = targetToHitboxRatios;
         this.groupingTypes = groupingTypes;
         this.cursorType = cursorType;
         this.repetitions = 1;
@@ -158,7 +161,7 @@ public class StudySettings
 
         for (int i = 0; i < studySettings.repetitions; i++)
         {
-            foreach (float EW in studySettings.EWToW_Ratios)
+            foreach (float targetRatio in studySettings.TargetToHitboxRatios)
             {
                 foreach (GroupingType grouping in studySettings.groupingTypes)
                 {
@@ -168,7 +171,7 @@ public class StudySettings
                         {
                             amplitude = amp,
                             groupingType = grouping,
-                            EWToW_Ratio = EW,
+                            TargetToHitboxRatio = targetRatio,
                         });
                     }
                 }

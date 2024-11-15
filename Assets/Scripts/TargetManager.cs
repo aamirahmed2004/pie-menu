@@ -8,11 +8,10 @@ using Random = System.Random;
 public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject targetWithLabel;
-    // [SerializeField] [Range(1,200)] private int numTargets;
+    private int numTargets = 25;
     [SerializeField] [Range(0.1f,10)] private float targetScale;
 
-    private int numTargets = 25;
-
+    
     private List<Target> targetList = new();
     private List<Vector3> targetPositions = new();
     private Camera mainCamera;
@@ -112,7 +111,7 @@ public class TargetManager : MonoBehaviour
         {
             var q = targetPositions.Where(v => (int) v.z == quadrant).ToList();
             var targetCount = 0;
-            while (targetCount < numTargets)
+            while (targetCount < ((int) numTargets/4)) // 4 quadrants
             {
                 if (appIndex >= appNames.Length) appIndex = 0;
                 var position = q[0];
@@ -126,6 +125,8 @@ public class TargetManager : MonoBehaviour
                 q.RemoveAt(0);
                 targetCount++;
                 appIndex++;
+                
+                
             }
         }
     }
