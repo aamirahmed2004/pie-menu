@@ -8,5 +8,5 @@ Assembly*
 .vs
 *.sln
 .idea/
-# ignore all metas
+.vscode/
 *.meta
