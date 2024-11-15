@@ -68,15 +68,16 @@ public class Target : MonoBehaviour
     public IEnumerator DestroyGameObject(float seconds)
     {
         yield return new WaitForSeconds(seconds);
-
-        // Note that the parent GameObject is TargetWithLabel, which has children Target (this) and Label.
-        // Find the Label gameObject in the children of the parent (i.e. should be a sibling component, but I couldnt find a function to directly look for siblings)
-        TextMeshPro label = this.transform.parent.GetComponentInChildren<TextMeshPro>();
-        if (label != null) Destroy(label.gameObject);
-
-        Destroy(this.gameObject);
-
-        // Delete the parent
-        Destroy(this.transform.parent.gameObject);
+        
+        // If the parent is a child of Camera.transform (in our case, that means the parent is a TargetWithLabel GameObject)
+        if (gameObject.transform.parent.IsChildOf(Camera.main?.transform))
+        {
+            // Delete the parent
+            Destroy(gameObject.transform.parent.gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }

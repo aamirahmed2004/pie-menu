@@ -7,5 +7,6 @@ Unity*
 Assembly*
 .vs/Pie Menu
 *.sln
+.idea/
 .vscode/
 *.meta
