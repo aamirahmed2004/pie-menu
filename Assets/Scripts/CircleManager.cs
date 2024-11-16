@@ -11,13 +11,24 @@ public class CircleManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        DrawCircleWithSegments(360,2.5f);
-        // DrawCircle(80,2.5f);
+        
     }
 
     // Update is called once per frame
     void Update()
     {
+        if ((Input.GetMouseButtonDown(0) && Input.GetMouseButtonDown(1)) || Input.GetMouseButtonDown(4))
+        {
+            // when mouse left and mouse right are pressed simultaneously
+            DrawCircleWithSegments(360,2f);
+            Debug.Log("Mouse 5");
+        }
+        
+        if ((Input.GetMouseButtonUp(0) && Input.GetMouseButtonUp(1)) || Input.GetMouseButtonUp(4))
+        {
+            // when mouse left and mouse right are pressed simultaneously
+            DestroySegments();
+        }
         
     }
     
@@ -29,10 +40,21 @@ public class CircleManager : MonoBehaviour
         for (int segmentNumber = 0; segmentNumber < numSegments; segmentNumber++)
         {
             var segment = Instantiate(Segment, new Vector3(0,0,0), Quaternion.identity);
+            
             segmentList.Add(segment.GetComponent<Segment>());
+            // segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             segmentList[segmentNumber].DrawCircleSegment(
                 steps, stepsPerSegments, radius, segmentNumber
             ); // store this for the future just in case
         }
+    }
+    
+    void DestroySegments()
+    {
+        foreach (var segment in segmentList)
+        {
+            Destroy(segment.gameObject);
+        }
+        segmentList.Clear();
     }
 }
