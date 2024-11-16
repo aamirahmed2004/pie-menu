@@ -18,6 +18,7 @@ public class TargetManager : MonoBehaviour
     
     private Camera mainCamera;
     private Vector3 screenCentre;
+    private Vector3 worldCentre;
     private GameObject startTargetObject;
 
     private float worldWidth, worldHeight;
@@ -41,6 +42,7 @@ public class TargetManager : MonoBehaviour
         mainCamera.orthographicSize = 15.0f / ((float) Screen.width / Screen.height);
         
         screenCentre = new Vector3(Screen.width / 2, Screen.height / 2, 1f);
+        worldCentre = mainCamera.ScreenToWorldPoint(screenCentre);
 
         worldHeight = mainCamera.orthographicSize * 2.0f;
         worldWidth = worldHeight * mainCamera.aspect;
@@ -109,7 +111,9 @@ public class TargetManager : MonoBehaviour
         int appIndex = 0;
         int targetCount = 0;
 
-        float width = trialConditions.TargetToHitboxRatio;
+        Debug.Log("Amplitude: " + trialConditions.amplitude + ", Ratio: " + trialConditions.targetToHitboxRatio + ", Grouping: " + trialConditions.groupingType);
+
+        float width = trialConditions.targetToHitboxRatio;
 
         var rand = new Random();
 
@@ -135,7 +139,7 @@ public class TargetManager : MonoBehaviour
                     continue;
                 }
 
-                SpawnTarget(position.x, position.y, appIndex);
+                SpawnTargetWithLabel(position.x, position.y, appIndex);
                 targetCountPerQuadrant++; targetCount++;
                 appIndex++;         
             }
@@ -158,7 +162,7 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
-                SpawnTarget(position.x, position.y, appIndex);
+                SpawnTargetWithLabel(position.x, position.y, appIndex);
                 targetCount++;
                 appIndex++;
             }
@@ -169,7 +173,7 @@ public class TargetManager : MonoBehaviour
         PickTarget(amplitude);
     }
     
-    private void SpawnTarget(float x, float y, int appIndex)
+    private void SpawnTargetWithLabel(float x, float y, int appIndex)
     {
         var pos = new Vector3(
             x,
@@ -181,23 +185,42 @@ public class TargetManager : MonoBehaviour
         targetObject.transform.localScale = Vector3.one * targetScale;
         targetObject.transform.parent = mainCamera.transform;
         targetObject.tag = "Target";
-
-        // Sample logic for selecting goal target. 
-        if (appIndex == 0)
-        {
-            Target target = targetObject.GetComponentInChildren<Target>();
-            target.SetGoalTarget();
-        }
-                
+         
         var label = targetObject.GetComponentInChildren<TextMeshPro>();
         label.text = appNames[appIndex];
         targetList.Add(targetObject.GetComponent<Target>());
     }
 
+    private void PickTarget(float amplitude)
+    {
+        GameObject chosenTargetObject = null;
+        float closestDistance = float.MaxValue;
+        
+        // Find target which is closest to 'amplitude' units away from center
+        foreach (GameObject target in GetAllTargets())
+        {
+  
+            float distanceFromCentre = Vector3.Distance(worldCentre, target.transform.position);
+            float difference = Mathf.Abs(distanceFromCentre - amplitude);
+
+            if (difference < closestDistance)
+            {
+                closestDistance = difference;
+                chosenTargetObject = target;
+            }
+        }
+
+        if (chosenTargetObject != null)
+        {
+            Target goalTarget = chosenTargetObject.GetComponentInChildren<Target>();
+            goalTarget.SetGoalTarget();
+            Debug.Log($"Picked target at {chosenTargetObject.transform.position} with error {closestDistance} from A value.");
+        }
+    }
+
     public void SpawnStartTarget()
     {
-        Vector3 worldCenter = mainCamera.ScreenToWorldPoint(screenCentre);
-        startTargetObject = Instantiate(targetWithLabel, worldCenter, Quaternion.identity, transform);
+        startTargetObject = Instantiate(targetWithLabel, worldCentre, Quaternion.identity, transform);
         startTargetObject.transform.localScale = Vector3.one * targetScale;
         startTargetObject.tag = "Target";
 
@@ -206,11 +229,6 @@ public class TargetManager : MonoBehaviour
         
         var label = startTargetObject.GetComponentInChildren<TextMeshPro>();
         label.text = "Start!";
-    }
-
-    private void PickTarget(float amplitude)
-    {
-
     }
 
     public GameObject[] GetAllTargets()

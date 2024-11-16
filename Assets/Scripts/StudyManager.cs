@@ -99,7 +99,7 @@ public struct TrialConditions       // These are the factors that affect how the
 {
     public float amplitude;                   // Distance from the center
     public GroupingType groupingType;         // Random zones or predefined "ordered" zones
-    public float TargetToHitboxRatio;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
+    public float targetToHitboxRatio;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
 }
 
 public enum CursorType
@@ -178,7 +178,7 @@ public class StudySettings
                     {
                         amplitude = amp,
                         groupingType = GroupingType.Random,     
-                        TargetToHitboxRatio = targetRatio,
+                        targetToHitboxRatio = targetRatio,
                     });
                 }
                 
@@ -196,7 +196,7 @@ public class StudySettings
                     {
                         amplitude = amp,
                         groupingType = GroupingType.Ordered,
-                        TargetToHitboxRatio = targetRatio,
+                        targetToHitboxRatio = targetRatio,
                     });
                 }
 
