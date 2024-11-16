@@ -109,6 +109,8 @@ public class TargetManager : MonoBehaviour
         int appIndex = 0;
         int targetCount = 0;
 
+        float width = trialConditions.TargetToHitboxRatio;
+
         var rand = new Random();
 
         // Start at quadrant 4 and go backwards to 1. Makes it easier to add remaining targets to the top left (since on a desktop the top left is often more dense).
@@ -161,6 +163,10 @@ public class TargetManager : MonoBehaviour
                 appIndex++;
             }
         }
+
+        // After spawning targets according to Grouping and EW, pick Goal Target according to A:
+        float amplitude = trialConditions.amplitude;
+        PickTarget(amplitude);
     }
     
     private void SpawnTarget(float x, float y, int appIndex)
@@ -201,6 +207,12 @@ public class TargetManager : MonoBehaviour
         var label = startTargetObject.GetComponentInChildren<TextMeshPro>();
         label.text = "Start!";
     }
+
+    private void PickTarget(float amplitude)
+    {
+
+    }
+
     public GameObject[] GetAllTargets()
     {
         return GameObject.FindGameObjectsWithTag("Target");
