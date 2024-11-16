@@ -21,7 +21,7 @@ public class Target : MonoBehaviour
     public void SetGoalTarget()
     {
         isGoal = true;
-        Debug.Log("Set to Goal!");
+        // Debug.Log("Set to Goal!");
         ChangeColor(Color.red);
     }
 
