@@ -11,6 +11,8 @@ public class PointCursor : MonoBehaviour
     private Collider2D detectedCollider = null;
     private Collider2D previousDetectedCollider = new();
 
+    
+
     // Start is called before the first frame update
     void Start()
     {

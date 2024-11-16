@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,9 +10,20 @@ public class Segment : MonoBehaviour
     
     public PolygonCollider2D segmentCollider;
     private int SegmentNumber;
+    
+    
+    
+    Gradient onHover = new Gradient();
     // Start is called before the first frame update
     void Start()
     {
+        
+        float alpha = 1.0f;
+        onHover.SetKeys(
+            new GradientColorKey[] { new GradientColorKey(Color.yellow, 0.0f), new GradientColorKey(Color.yellow, 1.0f) },
+            new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
+        
         
     }
 
@@ -22,31 +34,25 @@ public class Segment : MonoBehaviour
     }
     
     public void DrawCircleSegment(int steps, int stepsPerSegments, float radius, int segmentNumber) {
+        this.SegmentNumber = segmentNumber;
         segmentRenderer.positionCount = stepsPerSegments + 1;
-        Gradient blue = new Gradient();
+        Gradient originalColour= new Gradient();
         float alpha = 1.0f;
-        blue.SetKeys(
-            new GradientColorKey[] { new GradientColorKey(Color.blue, 0.0f), new GradientColorKey(Color.blue, 1.0f) },
-            new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-        );
-        
-        
-        //create red gradient
-        Gradient red = new Gradient();
-        red.SetKeys(
-            new GradientColorKey[] { new GradientColorKey(Color.red, 0.0f), new GradientColorKey(Color.red, 1.0f) },
-            new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-        );
-        
         if (segmentNumber % 2 == 0)
         {
-            segmentRenderer.colorGradient = blue;
+            originalColour.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
         }
         else
         {
-            segmentRenderer.colorGradient = red;
+            originalColour.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(Color.grey, 0.0f), new GradientColorKey(Color.grey, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
         }
-        
+        segmentRenderer.colorGradient = originalColour;
         int startStep = segmentNumber * stepsPerSegments;
         int endStep = (segmentNumber + 1) * stepsPerSegments;
         
@@ -78,5 +84,36 @@ public class Segment : MonoBehaviour
             colliderPoints2D[i] = new Vector2(colliderPoints[i].x, colliderPoints[i].y); // convert this to collider points
         }
         segmentCollider.points = colliderPoints2D; // set the collider points
+    }
+
+    private void OnMouseExit()
+    {
+        Gradient originalColour= new Gradient();
+        float alpha = 1.0f;
+        if (SegmentNumber % 2 == 0)
+        {
+            originalColour.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
+        }
+        else
+        {
+            originalColour.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(Color.grey, 0.0f), new GradientColorKey(Color.grey, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
+        }
+        segmentRenderer.colorGradient = originalColour;
+    }
+
+    private void OnMouseOver()
+    {
+        segmentRenderer.colorGradient = onHover;
+    }
+
+    public void setSegmentNumber(int segmentNumber)
+    {
+        this.SegmentNumber = segmentNumber;
     }
 }
