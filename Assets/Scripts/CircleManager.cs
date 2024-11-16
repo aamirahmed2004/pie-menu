@@ -17,13 +17,14 @@ public class CircleManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0) && Input.GetMouseButtonDown(1))
+        if ((Input.GetMouseButtonDown(0) && Input.GetMouseButtonDown(1)) || Input.GetMouseButtonDown(4))
         {
             // when mouse left and mouse right are pressed simultaneously
             DrawCircleWithSegments(360,2f);
+            Debug.Log("Mouse 5");
         }
         
-        if (Input.GetMouseButtonUp(0) && Input.GetMouseButtonUp(1))
+        if ((Input.GetMouseButtonUp(0) && Input.GetMouseButtonUp(1)) || Input.GetMouseButtonUp(4))
         {
             // when mouse left and mouse right are pressed simultaneously
             DestroySegments();
