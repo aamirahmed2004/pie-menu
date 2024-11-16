@@ -20,15 +20,22 @@ public class PointCursor : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
         //Get Mouse Position on screen, and get the corresponding position in a Vector3 World Co-Ordinate
         Vector3 mousePosition = Input.mousePosition;
 
         //Change the z position so that cursor does not get occluded by the camera
-        mousePosition.z += 9f;
+        mousePosition.z += 1f;
         mousePosition.x = Mathf.Clamp(mousePosition.x, 0f, Screen.width);
         mousePosition.y = Mathf.Clamp(mousePosition.y, 0f, Screen.height);
 
         transform.position = mainCam.ScreenToWorldPoint(mousePosition);
+
+        // Vector3 screenCentre = new Vector3(Screen.width / 2, Screen.height / 2, 1f);
+        // Vector3 worldCentre = mainCam.ScreenToWorldPoint(screenCentre);
+
+        // float distanceFromCenter = Vector3.Distance(worldCentre, transform.position);
+        // Debug.Log("Amplitude: " + distanceFromCenter);
 
         // Casting a ray straight down, below the cursor
         Collider2D detectedCollider = Physics2D.OverlapPoint(transform.position);

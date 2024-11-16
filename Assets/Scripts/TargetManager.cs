@@ -104,12 +104,12 @@ public class TargetManager : MonoBehaviour
         });
     }
     
-    public void SpawnTargets()
+    public void SpawnTargets(TrialConditions trialConditions)
     {
         int appIndex = 0;
         int targetCount = 0;
 
-        // var rand = new Random();
+        var rand = new Random();
 
         // Start at quadrant 4 and go backwards to 1. Makes it easier to add remaining targets to the top left (since on a desktop the top left is often more dense).
         for (int quadrant = 4; quadrant >= 1; quadrant--)
@@ -126,12 +126,13 @@ public class TargetManager : MonoBehaviour
                 Vector3 position = quadrantPositions[0];
                 quadrantPositions.RemoveAt(0);
 
-                // if (rand.Next(0, 4) == 2)
-                // {
-                //     q.RemoveAt(0);
-                //     q.Add(position);
-                //     continue;
-                // }
+                if (rand.Next(0, 4) == 2)
+                {
+                    quadrantPositions.RemoveAt(0);
+                    quadrantPositions.Add(position);
+                    continue;
+                }
+
                 SpawnTarget(position.x, position.y, appIndex);
                 targetCountPerQuadrant++; targetCount++;
                 appIndex++;         
@@ -149,12 +150,12 @@ public class TargetManager : MonoBehaviour
                 Vector3 position = quadrantPositions[0];
                 quadrantPositions.RemoveAt(0);
 
-                // if (rand.Next(0, 4) == 2)
-                // {
-                //     q.RemoveAt(0);
-                //     q.Add(position);
-                //     continue;
-                // }
+                if (rand.Next(0, 4) == 2)
+                {
+                    quadrantPositions.RemoveAt(0);
+                    quadrantPositions.Add(position);
+                    continue;
+                }
                 SpawnTarget(position.x, position.y, appIndex);
                 targetCount++;
                 appIndex++;
