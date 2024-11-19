@@ -11,12 +11,13 @@ public class CircleManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        DrawCircleWithSegments(360,2f, 4);   
     }
 
     // Update is called once per frame
     void Update()
     {
+        /*
         if ((Input.GetMouseButtonDown(0) && Input.GetMouseButtonDown(1)) || Input.GetMouseButtonDown(4))
         {
             // when mouse left and mouse right are pressed simultaneously
@@ -29,12 +30,11 @@ public class CircleManager : MonoBehaviour
             // when mouse left and mouse right are pressed simultaneously
             DestroySegments();
         }
-        
+        */
     }
     
     void DrawCircleWithSegments(int steps, float radius, int numSegments = 8)
     {
-        
         // circleRenderer.positionCount = steps + 1;
         int stepsPerSegments = steps / numSegments;
         for (int segmentNumber = 0; segmentNumber < numSegments; segmentNumber++)

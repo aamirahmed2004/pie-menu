@@ -34,7 +34,21 @@ public class TargetManager : MonoBehaviour
                                     "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", 
                                     "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", 
                                     "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
-
+    public Dictionary<int, Vector2> zoneCentroids = new()
+    {
+        { 1, new Vector2()},
+        { 2, new Vector2()},
+        { 3, new Vector2()},
+        { 4, new Vector2()}
+    };
+    public Dictionary<int, Vector4> zoneBounds = new()
+    {
+        {1, new Vector4()},
+        {2, new Vector4()},
+        {3, new Vector4()},
+        {4, new Vector4()}
+    };
+    
     // Awake() is called before any other GameObject's Start() 
     private void Awake()
     {
@@ -116,13 +130,13 @@ public class TargetManager : MonoBehaviour
         float width = trialConditions.width;
 
         var rand = new Random();
-
+        
         // Start at quadrant 4 and go backwards to 1. Makes it easier to add remaining targets to the top left (since on a desktop the top left is often more dense).
         for (int quadrant = 4; quadrant >= 1; quadrant--)
         {
             // Get positions for each z-value (quadrant)
             List<Vector3> quadrantPositions = targetPositions.Where(vector => (int) vector.z == quadrant).ToList();
-
+            List<Vector3> usedPositions = new();
             int targetCountPerQuadrant = 0;
             while (targetCountPerQuadrant < ((int) numTargets/4)) // evenly distribute some targets between 4 quadrants
             {
@@ -138,13 +152,19 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
-
+                
+                usedPositions.Add(position);
                 SpawnTargetWithLabel(position.x, position.y, appIndex, width);
+
                 targetCountPerQuadrant++; targetCount++;
                 appIndex++;         
             }
 
-            if (quadrant != 1) continue;
+            if (quadrant != 1)
+            {
+                UpdateZoneBoundsAndCentroids(quadrant, usedPositions);
+                continue;
+            }
 
             // If target count is not a multiple of 4, there will be some targets left to add. Add them all to the top left quadrant.
             // At this point in the for loop, quadrant = 1 so quadrantPositions contains positions of targets in Q1. 
@@ -162,15 +182,34 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
+
+                usedPositions.Add(position);
                 SpawnTargetWithLabel(position.x, position.y, appIndex, width);
+
                 targetCount++;
                 appIndex++;
             }
+
+            UpdateZoneBoundsAndCentroids(quadrant, usedPositions);
         }
 
         // After spawning targets according to Grouping and EW, pick Goal Target according to A:
         float amplitude = trialConditions.amplitude;
         PickTarget(amplitude);
+    }
+
+    private void UpdateZoneBoundsAndCentroids(int quadrant, List<Vector3> positions)
+    {
+        zoneCentroids[quadrant] = new Vector2(
+            positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Average(),
+            positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Average()
+        );
+        zoneBounds[quadrant] = new Vector4(
+            Math.Max(-worldWidth/2,positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Min() - targetWidth),
+            Math.Min(worldWidth/2, positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Max() + targetWidth),
+            Math.Max(-worldHeight/2, positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Min() - targetHeight),
+            Math.Min(worldHeight/2, positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Max() + targetHeight)
+        );
     }
     
     private void SpawnTargetWithLabel(float x, float y, int appIndex, float width)
