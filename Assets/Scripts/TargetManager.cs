@@ -111,9 +111,9 @@ public class TargetManager : MonoBehaviour
         int appIndex = 0;
         int targetCount = 0;
 
-        Debug.Log("Amplitude: " + trialConditions.amplitude + ", Ratio: " + trialConditions.targetToHitboxRatio + ", Grouping: " + trialConditions.groupingType);
+        Debug.Log("Amplitude: " + trialConditions.amplitude + ", Width: " + trialConditions.width + ", Grouping: " + trialConditions.groupingType);
 
-        float width = trialConditions.targetToHitboxRatio;
+        float width = trialConditions.width;
 
         var rand = new Random();
 
@@ -139,7 +139,7 @@ public class TargetManager : MonoBehaviour
                     continue;
                 }
 
-                SpawnTargetWithLabel(position.x, position.y, appIndex);
+                SpawnTargetWithLabel(position.x, position.y, appIndex, width);
                 targetCountPerQuadrant++; targetCount++;
                 appIndex++;         
             }
@@ -162,7 +162,7 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
-                SpawnTargetWithLabel(position.x, position.y, appIndex);
+                SpawnTargetWithLabel(position.x, position.y, appIndex, width);
                 targetCount++;
                 appIndex++;
             }
@@ -173,7 +173,7 @@ public class TargetManager : MonoBehaviour
         PickTarget(amplitude);
     }
     
-    private void SpawnTargetWithLabel(float x, float y, int appIndex)
+    private void SpawnTargetWithLabel(float x, float y, int appIndex, float width)
     {
         var pos = new Vector3(
             x,
@@ -182,7 +182,7 @@ public class TargetManager : MonoBehaviour
         ) * (TargetSpacing * targetScale);
                     
         var targetObject = Instantiate(targetWithLabel, pos, Quaternion.identity, transform);
-        targetObject.transform.localScale = Vector3.one * targetScale;
+        targetObject.transform.localScale = Vector3.one * width;
         targetObject.transform.parent = mainCamera.transform;
         targetObject.tag = "Target";
          
