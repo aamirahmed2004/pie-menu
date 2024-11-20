@@ -1,15 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = UnityEngine.Random;
+
+public enum TrialState
+{
+    None,
+    Start,
+    Limbo,
+    Active,
+    Ended,
+}
 
 public class StudyManager : MonoBehaviour
 {
     [SerializeField] private TargetManager targetManager;
     // [SerializeField] private GameObject pieCursor;
     [SerializeField] private GameObject pointCursor;
-
+    
+    public TrialState TrialState = TrialState.None;
     private GameObject[] targetObjectsOnScreen;
     private int numTargetsOnScreen;
     private int numTotalTargets;
@@ -19,7 +30,9 @@ public class StudyManager : MonoBehaviour
     private Camera mainCamera;
     private GameObject centerTargetObject;
     private CursorType originalCursor;
-
+    private CursorType cursorType = CursorType.PieCursor;
+    private CircleManager circleManager;
+    
     private StudySettings studySettings;
     private List<TrialConditions> trialSequence;
     private int currentTrialIndex;
@@ -46,9 +59,8 @@ public class StudyManager : MonoBehaviour
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
         Debug.Log("Number of trials: " + trialSequence.Count);
         currentTrialIndex = 0;
-
         numTotalTargets = targetManager.GetNumTotalTargets();
-        targetManager.SpawnStartTarget();
+        circleManager = GameObject.Find("CircleManager")?.GetComponent<CircleManager>();
     }
 
     private void Update()
@@ -56,33 +68,38 @@ public class StudyManager : MonoBehaviour
         targetObjectsOnScreen = targetManager.GetAllTargets();
         numTargetsOnScreen = targetObjectsOnScreen.Length;
         
-        // To start with, there is always one Start target. If there are 0 on the screen, that means start target was clicked.
-        if (numTargetsOnScreen == 0)
+        switch (TrialState)
         {
-            ResetTrialMisclicks();
-            movementStartTime = Time.time;
-            targetManager.SpawnTargets(trialSequence[currentTrialIndex]); 
-            currentTrialIndex++;
-        } 
-        // If there are n - 1 targets on screen (assuming only goal target is clickable), then spawn the start target again.
-        else if (numTargetsOnScreen == numTotalTargets - 1)
-        {
-            totalMovementTime = (Time.time - movementStartTime) * 1000; // Convert to milliseconds
-            targetManager.DestroyAllTargets();
-
-            Debug.Log("Movement Time: " + totalMovementTime + "ms");
-            Debug.Log("Total errors: " + (trialMisclicks-1));       // Subtract 1 because currently even clicking the goal target increments misclicks.
-
-            targetManager.SpawnStartTarget();
+            case TrialState.None: 
+                circleManager.circleActive = false;
+                targetManager.SpawnStartTarget();
+                TrialState = TrialState.Limbo;
+                break;
+            case TrialState.Start:
+                ResetTrialMisclicks();
+                if (cursorType == CursorType.PieCursor)
+                {
+                    circleManager.circleActive = true;
+                }
+                movementStartTime = Time.time;
+                targetManager.SpawnTargets(trialSequence[currentTrialIndex]); 
+                currentTrialIndex++;
+                TrialState = TrialState.Active;
+                break;
+            case TrialState.Active:
+                if (Input.GetMouseButtonDown(0))
+                    ++trialMisclicks;
+                break;
+            case TrialState.Ended:
+                totalMovementTime = (Time.time - movementStartTime) * 1000; // Convert to milliseconds
+                targetManager.DestroyAllTargets();
+                targetManager.ResetZones();
+                targetManager.primeTarget = null; // Useful for distinguishing 'null' vs. destroyed!
+                Debug.Log("Movement Time: " + totalMovementTime + "ms");
+                Debug.Log("Total errors: " + trialMisclicks); // No need to subtract -1 due to Trial State changing
+                TrialState = TrialState.None;
+                break;
         }
-        else if (numTargetsOnScreen == numTotalTargets)
-        {
-            if (Input.GetMouseButtonDown(0))
-            {
-                trialMisclicks++;
-            }
-        }
-
     }
     
     private void ResetTrialMisclicks()
@@ -152,7 +169,7 @@ public class StudySettings
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
         return new StudySettings(
-            new List<float> { 8f, 12f, 16f },                                           // Amplitudes
+            new List<float> { 5f, 7.5f, 10f },                                           // Amplitudes
             new List<float> { 1f, 1.5f, 2f },                                           // Target width to Hitbox ratios
             new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // A trial can either have random groups or ordered groups 
             chosenCursor,                                                               // cursorType

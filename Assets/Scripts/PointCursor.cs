@@ -66,7 +66,7 @@ public class PointCursor : MonoBehaviour
             target.OnHoverEnter();
         }
         else{
-            Debug.LogWarning("Not a valid target?");
+            //Debug.LogWarning("Not a valid target?");
         }
     }
 

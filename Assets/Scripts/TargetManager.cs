@@ -1,7 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using Random = System.Random;
 
@@ -34,20 +36,13 @@ public class TargetManager : MonoBehaviour
                                     "SourceCraft", "DevSnap", "ProjectPad", "VersionVault", "SyncWrite", "MovieBox", "Streamify", "RadioFusion", 
                                     "MusicMate", "GameSparks", "PlayBox", "CineMate", "SoundStorm", "MovieVault", "AudioFlow", "MediaCraft", "SongLab", 
                                     "StreamX", "ShowLoop", "FlickPlay", "SoundBurst", "GameForge", "ChillBox", "MusicWave", "TuneMaster", "FileMender", "DiskCleaner", "BackupHub", "CleanSweep" };
-    public Dictionary<int, Vector2> zoneCentroids = new()
-    {
-        { 1, new Vector2()},
-        { 2, new Vector2()},
-        { 3, new Vector2()},
-        { 4, new Vector2()}
-    };
-    public Dictionary<int, Vector4> zoneBounds = new()
-    {
-        {1, new Vector4()},
-        {2, new Vector4()},
-        {3, new Vector4()},
-        {4, new Vector4()}
-    };
+
+    public Target startTarget;
+    public Target primeTarget;
+
+    public Dictionary<int, Vector2> zoneCentroids = new();
+
+    public Dictionary<int, Vector4> zoneBounds = new();
     
     // Awake() is called before any other GameObject's Start() 
     private void Awake()
@@ -62,13 +57,18 @@ public class TargetManager : MonoBehaviour
         worldWidth = worldHeight * mainCamera.aspect;
         GetTargetSize();
         GenerateTargetPositions();
+        ResetZones();
         // SpawnTargets();      TargetManager no longer spawns targets, it makes the method public so StudyManager can call it instead.
+    }
+    
+    public void Update()
+    {
+        targetList.RemoveAll(t => t.IsDestroyed());
     }
 
     private void GetTargetSize()
     {
         var sampleTarget = Instantiate(targetWithLabel, new Vector3(0,0,0), Quaternion.identity);
-
         sampleTarget.transform.localScale = Vector3.one * targetScale;
         sampleTarget.name = "SampleTarget";
         sampleTarget.transform.parent = mainCamera.transform;
@@ -111,13 +111,6 @@ public class TargetManager : MonoBehaviour
                 targetPositions.Add(new Vector3(xPos,yPos,quadrant));
             }
         }
-        targetPositions.Sort((posA, posB) =>
-        {
-            // Divide by aspect ratio to make more of an ovular shape to target distribution
-            var disA = (new Vector2(0,0) - new Vector2(posA.x/mainCamera.aspect,posA.y)).magnitude;
-            var disB = (new Vector2(0,0) - new Vector2(posB.x/mainCamera.aspect,posB.y)).magnitude;
-            return disB.CompareTo(disA);
-        });
     }
     
     public void SpawnTargets(TrialConditions trialConditions)
@@ -126,17 +119,29 @@ public class TargetManager : MonoBehaviour
         int targetCount = 0;
 
         Debug.Log("Amplitude: " + trialConditions.amplitude + ", Ratio: " + trialConditions.targetToHitboxRatio + ", Grouping: " + trialConditions.groupingType);
-
-        float width = trialConditions.targetToHitboxRatio;
-
+        
+        // Pick the Target the user is meant to select first, retrieving the remaining allowed positions & the selected position
+        var (validPositions, primePosition) = PickTarget(trialConditions.amplitude);
+        // Structure for recording the positions in each quadrant for centroid + bounding box data
+        var zonesPositions = new Dictionary<int, List<Vector3>>();
+        // Add the prime target's list first, then add it to the list of positions for its zone so it is factored into
+        // the bounding box and centroid determination
+        zonesPositions.Add((int) primePosition.z, new List<Vector3>());
+        zonesPositions[(int) primePosition.z].Add(primePosition);
+        
         var rand = new Random();
         
         // Start at quadrant 4 and go backwards to 1. Makes it easier to add remaining targets to the top left (since on a desktop the top left is often more dense).
         for (int quadrant = 4; quadrant >= 1; quadrant--)
         {
+            // This may already exist due to selection of the target beforehand
+            if (!zonesPositions.ContainsKey(quadrant))
+            {
+                // Add the list of positions for this quadrant to the dictionary
+                zonesPositions.Add(quadrant, new List<Vector3>());   
+            }
             // Get positions for each z-value (quadrant)
-            List<Vector3> quadrantPositions = targetPositions.Where(vector => (int) vector.z == quadrant).ToList();
-            List<Vector3> usedPositions = new();
+            List<Vector3> quadrantPositions = validPositions.Where(vector => (int) vector.z == quadrant).ToList();
             int targetCountPerQuadrant = 0;
             while (targetCountPerQuadrant < ((int) numTargets/4)) // evenly distribute some targets between 4 quadrants
             {
@@ -152,17 +157,14 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
-                usedPositions.Add(position);
+                // Add selected position to dictionary
+                zonesPositions[quadrant].Add(position);
                 SpawnTargetWithLabel(position.x, position.y, appIndex);
                 targetCountPerQuadrant++; targetCount++;
                 appIndex++;         
             }
 
-            if (quadrant != 1)
-            {
-                UpdateZoneBoundsAndCentroids(quadrant, usedPositions);
-                continue;
-            }
+            if (quadrant != 1) continue;
 
             // If target count is not a multiple of 4, there will be some targets left to add. Add them all to the top left quadrant.
             // At this point in the for loop, quadrant = 1 so quadrantPositions contains positions of targets in Q1. 
@@ -180,26 +182,28 @@ public class TargetManager : MonoBehaviour
                     quadrantPositions.Add(position);
                     continue;
                 }
-                usedPositions.Add(position);
+                zonesPositions[quadrant].Add(position);
                 SpawnTargetWithLabel(position.x, position.y, appIndex);
                 targetCount++;
                 appIndex++;
             }
-
-            UpdateZoneBoundsAndCentroids(quadrant, usedPositions);
         }
 
-        // After spawning targets according to Grouping and EW, pick Goal Target according to A:
-        float amplitude = trialConditions.amplitude;
-        PickTarget(amplitude);
+        // Calculate the bounding box & centroid for each zone (quadrant)
+        foreach (var zonePositions in zonesPositions)
+        {
+            UpdateZoneBoundsAndCentroids(zonePositions.Key, zonePositions.Value);
+        }
     }
 
     private void UpdateZoneBoundsAndCentroids(int quadrant, List<Vector3> positions)
     {
+        // Simple calculation for the centroid (mean position of all targets in quadrant)
         zoneCentroids[quadrant] = new Vector2(
             positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Average(),
             positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Average()
         );
+        // Quadrant bounding box is slightly padded so it doesn't fit as tightly around the targets themselves
         zoneBounds[quadrant] = new Vector4(
             Math.Max(-worldWidth/2,positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Min() - targetWidth),
             Math.Min(worldWidth/2, positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Max() + targetWidth),
@@ -207,8 +211,26 @@ public class TargetManager : MonoBehaviour
             Math.Min(worldHeight/2, positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Max() + targetHeight)
         );
     }
+
+    public void ResetZones()
+    {
+        zoneCentroids = new()
+        {
+            { 1, new Vector2() },
+            { 2, new Vector2() },
+            { 3, new Vector2() },
+            { 4, new Vector2() }
+        };
+        zoneBounds = new()
+        {
+            {1, new Vector4()},
+            {2, new Vector4()},
+            {3, new Vector4()},
+            {4, new Vector4()}
+        };
+    }
     
-    private void SpawnTargetWithLabel(float x, float y, int appIndex)
+    private void SpawnTargetWithLabel(float x, float y, int appIndex, bool isGoal = false)
     {
         var pos = new Vector3(
             x,
@@ -217,40 +239,59 @@ public class TargetManager : MonoBehaviour
         ) * (TargetSpacing * targetScale);
                     
         var targetObject = Instantiate(targetWithLabel, pos, Quaternion.identity, transform);
+        targetObject.name = isGoal ? "Target" : "DistractorTarget";
         targetObject.transform.localScale = Vector3.one * targetScale;
         targetObject.transform.parent = mainCamera.transform;
         targetObject.tag = "Target";
          
         var label = targetObject.GetComponentInChildren<TextMeshPro>();
         label.text = appNames[appIndex];
-        targetList.Add(targetObject.GetComponent<Target>());
+        var targetScript = targetObject.GetComponentInChildren<Target>();
+        if (isGoal)
+        {
+            primeTarget = targetScript;
+            targetScript.SetGoalTarget();   
+        }
+        targetList.Add(targetScript);
     }
 
-    private void PickTarget(float amplitude)
+    private float getAmplitudeDiff(Vector3 pos, float amplitude)
     {
-        GameObject chosenTargetObject = null;
-        float closestDistance = float.MaxValue;
-        
-        // Find target which is closest to 'amplitude' units away from center
-        foreach (GameObject target in GetAllTargets())
+        return Mathf.Abs((new Vector2(0, 0) - new Vector2(pos.x, pos.y)).magnitude - amplitude);
+    }
+    private Tuple<List<Vector3>, Vector3> PickTarget(float amplitude)
+    {
+        var validPositions = new List<Vector3>(targetPositions);
+        // Sort the targets based on their closeness to the desired amplitude (distance)
+        validPositions.Sort((posA, posB) =>
         {
-  
-            float distanceFromCentre = Vector3.Distance(worldCentre, target.transform.position);
-            float difference = Mathf.Abs(distanceFromCentre - amplitude);
+            var diffA = getAmplitudeDiff(posA, amplitude);
+            var diffB = getAmplitudeDiff(posB, amplitude);
+            return diffA.CompareTo(diffB);
+        });
 
-            if (difference < closestDistance)
-            {
-                closestDistance = difference;
-                chosenTargetObject = target;
-            }
-        }
-
-        if (chosenTargetObject != null)
+        // For variability, select randomly from which positions match closest to the desired amplitude
+        var rand = new Random();
+        var closestDiff = Mathf.Abs((new Vector2(0, 0) - new Vector2(validPositions[0].x, validPositions[0].y)).magnitude - amplitude);
+        var closestMatches = validPositions.Where(pos =>
         {
-            Target goalTarget = chosenTargetObject.GetComponentInChildren<Target>();
-            goalTarget.SetGoalTarget();
-            Debug.Log($"Picked target at {chosenTargetObject.transform.position} with error {closestDistance} from A value.");
-        }
+            var diff = getAmplitudeDiff(pos, amplitude);
+            return Math.Abs(diff - closestDiff) < 0.001f;
+        }).ToList(); 
+        var chosenPosition = closestMatches[rand.Next(closestMatches.Count)];
+        Debug.Log($"Picked position at {chosenPosition} with error {getAmplitudeDiff(chosenPosition, amplitude)}");
+        SpawnTargetWithLabel(chosenPosition.x, chosenPosition.y, 0, true);
+        validPositions.Remove(chosenPosition);
+
+        // (Moved from generateTargetPositions)
+        // Sort the targets based on their distance to the center of the screen (divided by aspect to allow more ovular distribution)
+        validPositions.Sort((posA, posB) =>
+        {
+            var disA = (new Vector2(0,0) - new Vector2(posA.x/mainCamera.aspect,posA.y)).magnitude;
+            var disB = (new Vector2(0,0) - new Vector2(posB.x/mainCamera.aspect,posB.y)).magnitude;
+            return disB.CompareTo(disA);
+        });
+        return new Tuple<List<Vector3>, Vector3>(validPositions, chosenPosition);
     }
 
     public void SpawnStartTarget()
@@ -259,8 +300,10 @@ public class TargetManager : MonoBehaviour
         startTargetObject.transform.localScale = Vector3.one * targetScale;
         startTargetObject.tag = "Target";
 
-        Target target = startTargetObject.GetComponentInChildren<Target>();
-        target.SetGoalTarget();
+        var target = startTargetObject.GetComponentInChildren<Target>();
+        target.SetStartTarget();
+        startTarget = target;
+        targetList.Add(target);
         
         var label = startTargetObject.GetComponentInChildren<TextMeshPro>();
         label.text = "Start!";
@@ -268,15 +311,14 @@ public class TargetManager : MonoBehaviour
 
     public GameObject[] GetAllTargets()
     {
-        return GameObject.FindGameObjectsWithTag("Target");
+        return targetList.ConvertAll(t => t.gameObject).ToArray();
     }
 
     public void DestroyAllTargets()
     {
-        GameObject[] targetWithLabelObjects = GetAllTargets();
-        foreach (GameObject targetWithLabel in targetWithLabelObjects)
+        foreach (var target in targetList)
         {
-            Destroy(targetWithLabel);
+            target.DestroyGameObject();
         }
     }
 
