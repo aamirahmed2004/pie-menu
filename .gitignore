@@ -9,3 +9,4 @@ Assembly*
 *.sln
 .idea/
 .vscode/
+Assets/data_PointCursor.csv.meta

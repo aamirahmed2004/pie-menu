@@ -77,6 +77,7 @@ public class StudyManager : MonoBehaviour
         currentTrialIndex = 0;
         numTotalTargets = targetManager.GetNumTotalTargets();
         circleManager = GameObject.Find("CircleManager")?.GetComponent<CircleManager>();
+        Debug.Log("Circlemanager: "+ circleManager);
     }
 
     private void Update()
@@ -87,6 +88,7 @@ public class StudyManager : MonoBehaviour
         switch (TrialState)
         {
         case TrialState.None: 
+            Debug.Log(circleManager);
             circleManager.circleActive = false;
             targetManager.SpawnStartTarget();
             TrialState = TrialState.Limbo;
