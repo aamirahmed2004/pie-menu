@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -14,6 +15,7 @@ public class StudyManager : MonoBehaviour
     private int numTargetsOnScreen;
     private int numTotalTargets;
     private bool isStartTargetSpawned;
+    private int participantID;
 
     private Vector2 screenCentre;
     private Camera mainCamera;
@@ -22,6 +24,8 @@ public class StudyManager : MonoBehaviour
 
     private StudySettings studySettings;
     private List<TrialConditions> trialSequence;
+    private TrialConditions currentTrialConditions;
+
     private int currentTrialIndex;
     private float movementStartTime = 0;
     private float totalMovementTime = 0;
@@ -32,17 +36,21 @@ public class StudyManager : MonoBehaviour
     {
         "PID",
         "CT",
-        "GT",
         "A",
-        "EWW",
+        "W",
+        "Q",
         "MT",
         "MissedClicks"
     };
 
     private void Start()
     {
+        // TODO: change these two accordingly when copying this over to Pie Menu scene
+        participantID = 1;
         originalCursor = CursorType.PointCursor;
-        studySettings = StudySettings.GetStudySettings(originalCursor, 1);      // See the StudySettings class to make changes to A,W,etc
+
+        // See the StudySettings class to make changes to A,W,Q. 
+        studySettings = StudySettings.GetStudySettings(originalCursor, 2);          // 2 repetitions per trial condition      
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
         Debug.Log("Number of trials: " + trialSequence.Count);
         currentTrialIndex = 0;
@@ -61,18 +69,34 @@ public class StudyManager : MonoBehaviour
         {
             ResetTrialMisclicks();
             movementStartTime = Time.time;
-            targetManager.SpawnTargets(trialSequence[currentTrialIndex]); 
+
+            currentTrialConditions = trialSequence[currentTrialIndex];
+
+            Debug.Log((currentTrialIndex+1) + " of " + trialSequence.Count());
+
+            UpdateTargetManager(currentTrialConditions.width);
+            targetManager.SpawnTargets(currentTrialConditions); 
             currentTrialIndex++;
+            
         } 
         // If there are n - 1 targets on screen (assuming only goal target is clickable), then spawn the start target again.
         else if (numTargetsOnScreen == numTotalTargets - 1)
         {
             totalMovementTime = (Time.time - movementStartTime) * 1000; // Convert to milliseconds
+
+            Debug.Log("Data: "
+                + "\nPID: " + participantID
+                + ", CT: " + originalCursor                         // CursorType.PieMenu = 1, CursorType.PointCursor = 2
+                + ", Movement Time: " + totalMovementTime + "ms"
+                + ", Total Errors: " + (trialMisclicks - 1)         // we subtract 1 because currently even clicking the right target increments the click counter.
+                + ", Amplitude: " + currentTrialConditions.amplitude
+                + ", Width: " + currentTrialConditions.width
+                + ", Quadrants: " + currentTrialConditions.numQuadrants); 
+
+            // TODO: this if condition is satisfied for the last trial - route to some "End" scene with "Thank you" text because this loop breaks.
+            if (currentTrialIndex == trialSequence.Count() - 1) return;
+
             targetManager.DestroyAllTargets();
-
-            Debug.Log("Movement Time: " + totalMovementTime + "ms");
-            Debug.Log("Total errors: " + (trialMisclicks-1));       // Subtract 1 because currently even clicking the goal target increments misclicks.
-
             targetManager.SpawnStartTarget();
         }
         else if (numTargetsOnScreen == numTotalTargets)
@@ -82,7 +106,13 @@ public class StudyManager : MonoBehaviour
                 trialMisclicks++;
             }
         }
+    }
 
+    // Update targetScale and recalculate grid positions
+    private void UpdateTargetManager(float width)
+    {
+        TargetManager.targetScale = width;
+        targetManager.InitializeAllPossibleGridPositions(); 
     }
     
     private void ResetTrialMisclicks()
@@ -91,15 +121,11 @@ public class StudyManager : MonoBehaviour
     }
 }
 
-// BOILERPLATE FOR FACTOR IMPLEMENTATION
-// Adding some code below to get started with implementing independent variables (factors) in setting up targets
-// All of this is subject to change or can just be ignored if other approaches are better.
-
-public struct TrialConditions       // These are the factors that affect how the targets spawn and how goal target is chosen. So this would probably need to be passed to the TargetManager's spawn function.
+public struct TrialConditions       // These are the factors that affect how the targets spawn and how goal target is chosen.
 {
     public float amplitude;                   // Distance from the center
-    public GroupingType groupingType;         // Random zones or predefined "ordered" zones
-    public float width;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
+    public float width;                       // Width of target - constant for scaling Vector3.one 
+    public int numQuadrants;                  // Number of zones/quadrants that targets can spawn in
 }
 
 public enum CursorType
@@ -109,10 +135,12 @@ public enum CursorType
     PointCursor
 }
 
-// Recap: this factor determines whether each zone contains random icons or "ordered" icons. The order could be anything from color coding to similar themes like IDE's, messaging, games, etc.
+// Recap of meeting: this factor determines whether each zone contains random icons or "ordered" icons. The order could be anything from color coding to similar themes like IDE's, messaging, games, etc.
 // We would hard code these groups ourselves.
 // The rationale is that a desktop would also probably have some kind of grouping or order to it.
 // We may not use this as a factor, if we don't then they should always be grouped
+
+// Update: we are not using this as a factor
 public enum GroupingType
 {
     Null,
@@ -126,24 +154,24 @@ public class StudySettings
     public List<float> amplitudes;
     public List<float> widths; // denotes the constant scaling factor based on which we increase both the gap between icons and the hitbox of each icon
     // public List<bool> recent; idk if we're going with this for factor
-    public List<GroupingType> groupingTypes;
+    public List<int> numQuadrants;
     public CursorType cursorType;
     public int repetitions;
 
-    public StudySettings(List<float> amplitudes, List<float> widths, List<GroupingType> groupingTypes, CursorType cursorType, int repetitions)
+    public StudySettings(List<float> amplitudes, List<float> widths, List<int> numQuadrants, CursorType cursorType, int repetitions)
     {
         this.amplitudes = amplitudes;
         this.widths = widths;
-        this.groupingTypes = groupingTypes;
+        this.numQuadrants = numQuadrants;
         this.cursorType = cursorType;
         this.repetitions = repetitions;
     }
     // Default constructor with 1 repetition
-    public StudySettings(List<float> amplitudes, List<float> widths, List<GroupingType> groupingTypes, CursorType cursorType)
+    public StudySettings(List<float> amplitudes, List<float> widths, List<int> numQuadrants, CursorType cursorType)
     {
         this.amplitudes = amplitudes;
         this.widths = widths;
-        this.groupingTypes = groupingTypes;
+        this.numQuadrants = numQuadrants;
         this.cursorType = cursorType;
         this.repetitions = 1;
     }
@@ -151,11 +179,12 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
+        // 4x3x4xreps = 48 x rep trials 
         return new StudySettings(
-            new List<float> { 4f, 8f, 16f },                                            // Amplitudes
-            new List<float> { 0.5f, 0.75f, 1f },                                        // Widths
-            new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // Needs changing
-            chosenCursor,                                                               // cursorType
+            new List<float> { 4f, 8f, 16f },              // Amplitudes
+            new List<float> { 0.5f, 1f, 1.5f },           // Widths
+            new List<int>() { 1, 2, 3, 4 },               // numQuadrants
+            chosenCursor,                                 // cursorType
             repetitions
         );
     }
@@ -163,48 +192,28 @@ public class StudySettings
     // Given study settings, returns a randomized list of trial conditions that the TargetManager should use to spawn targets
     public static List<TrialConditions> CreateSequenceOfTrials(StudySettings studySettings)
     {
-        // Could refactor this into 4 nested loops to avoid repetition but it would look ugly and be less readable.
-        // One sequence for each type of grouping: Random and Ordered
+
         List<TrialConditions> randomTrialSequence = new List<TrialConditions>();
-        List<TrialConditions> orderedTrialSequence = new List<TrialConditions>();
 
         for (int i = 0; i < studySettings.repetitions; i++)
         {
-            foreach (float targetRatio in studySettings.widths)
+            foreach (float width in studySettings.widths)
             {
                 foreach (float amp in studySettings.amplitudes)
                 {
-                    randomTrialSequence.Add(new TrialConditions
+                    foreach (int quadrants in studySettings.numQuadrants)
                     {
-                        amplitude = amp,
-                        groupingType = GroupingType.Random,     
-                        width = targetRatio,
-                    });
+                        randomTrialSequence.Add(new TrialConditions
+                        {
+                            amplitude = amp,
+                            numQuadrants = quadrants,
+                            width = width,
+                        });
+                    }
                 }
-                
             }
         }
         randomTrialSequence = YatesShuffle<TrialConditions>(randomTrialSequence);
-
-        for (int i = 0; i < studySettings.repetitions; i++)
-        {
-            foreach (float targetRatio in studySettings.widths)
-            {
-                foreach (float amp in studySettings.amplitudes)
-                {
-                    orderedTrialSequence.Add(new TrialConditions
-                    {
-                        amplitude = amp,
-                        groupingType = GroupingType.Ordered,
-                        width = targetRatio,
-                    });
-                }
-
-            }
-        }
-        orderedTrialSequence = YatesShuffle<TrialConditions>(orderedTrialSequence);
-        
-        randomTrialSequence.AddRange(orderedTrialSequence);
         return randomTrialSequence;
     }
 
