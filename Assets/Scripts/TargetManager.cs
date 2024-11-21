@@ -65,12 +65,12 @@ public class TargetManager : MonoBehaviour
 
         worldHeight = mainCamera.orthographicSize * 2.0f;
         worldWidth = worldHeight * mainCamera.aspect;
-        GetTargetSize();
-        GenerateTargetPositions();
+        // GetTargetSize();
+        // GenerateTargetPositions();
         // SpawnTargets();      TargetManager no longer spawns targets, it makes the method public so StudyManager can call it instead.
     }
 
-    private void GetTargetSize()
+    public void GetTargetSize(TrialConditions trialConditions)
     {
         var sampleTarget = Instantiate(targetWithLabel, new Vector3(0,0,0), Quaternion.identity);
 
@@ -88,7 +88,7 @@ public class TargetManager : MonoBehaviour
     }
 
     // Generates every possible position in the grid.
-    private void GenerateTargetPositions()
+    public void GenerateTargetPositions()
     {
         targetPositions.Clear();
         var columns = (int) (worldWidth / (TargetSpacing * targetScale));

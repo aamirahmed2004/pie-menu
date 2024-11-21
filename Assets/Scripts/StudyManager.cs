@@ -56,6 +56,8 @@ public class StudyManager : MonoBehaviour
         targetObjectsOnScreen = targetManager.GetAllTargets();
         numTargetsOnScreen = targetObjectsOnScreen.Length;
         
+        targetManager.GetTargetSize(trialSequence[currentTrialIndex]);
+        targetManager.GenerateTargetPositions();
         // To start with, there is always one Start target. If there are 0 on the screen, that means start target was clicked.
         if (numTargetsOnScreen == 0)
         {
