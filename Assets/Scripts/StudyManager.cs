@@ -152,9 +152,9 @@ public class StudySettings
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
         return new StudySettings(
-            new List<float> { 8f, 12f, 16f },                                           // Amplitudes
-            new List<float> { 0.5f, 0.75f, 1f },                                           // Target width to Hitbox ratios
-            new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // A trial can either have random groups or ordered groups 
+            new List<float> { 4f, 8f, 16f },                                            // Amplitudes
+            new List<float> { 0.5f, 0.75f, 1f },                                        // Widths
+            new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // Needs changing
             chosenCursor,                                                               // cursorType
             repetitions
         );
