@@ -31,6 +31,8 @@ public class StudyManager : MonoBehaviour
     private float totalMovementTime = 0;
     private int trialMisclicks = 0;
 
+    bool studyOver = false;
+
     // For CSV logging
     private string[] header =
     {
@@ -45,12 +47,19 @@ public class StudyManager : MonoBehaviour
 
     private void Start()
     {
-        // TODO: change these two accordingly when copying this over to Pie Menu scene
+
+        // TODO: change these two lines accordingly when copying this over to Pie Menu scene
         participantID = 1;
         originalCursor = CursorType.PointCursor;
 
-        // See the StudySettings class to make changes to A,W,Q. 
-        studySettings = StudySettings.GetStudySettings(originalCursor, 2);          // 2 repetitions per trial condition      
+        CSVManager.SetFilePath(originalCursor.ToString());
+        
+        // If the file doesnt exist, create a file and append header
+        if (CSVManager.ReadFromCSV(CSVManager.filePath) == null)
+            CSVManager.AppendToCSV(header);
+
+        // See the StudySettings class below to make changes to A,W,Q. 
+        studySettings = StudySettings.GetStudySettings(originalCursor, 2);          // Argument of 2: repetitions per trial condition      
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
         Debug.Log("Number of trials: " + trialSequence.Count);
         currentTrialIndex = 0;
@@ -82,6 +91,9 @@ public class StudyManager : MonoBehaviour
         // If there are n - 1 targets on screen (assuming only goal target is clickable), then spawn the start target again.
         else if (numTargetsOnScreen == numTotalTargets - 1)
         {
+            if (studyOver)
+                return;
+
             totalMovementTime = (Time.time - movementStartTime) * 1000; // Convert to milliseconds
 
             Debug.Log("Data: "
@@ -91,10 +103,28 @@ public class StudyManager : MonoBehaviour
                 + ", Total Errors: " + (trialMisclicks - 1)         // we subtract 1 because currently even clicking the right target increments the click counter.
                 + ", Amplitude: " + currentTrialConditions.amplitude
                 + ", Width: " + currentTrialConditions.width
-                + ", Quadrants: " + currentTrialConditions.numQuadrants); 
+                + ", Quadrants: " + currentTrialConditions.numQuadrants);
 
-            // TODO: this if condition is satisfied for the last trial - route to some "End" scene with "Thank you" text because this loop breaks.
-            if (currentTrialIndex == trialSequence.Count() - 1) return;
+            int CT = originalCursor == CursorType.PieCursor ? 1 : 2;
+            string[] data =
+                {
+                    participantID.ToString(),
+                    CT.ToString(),
+                    currentTrialConditions.amplitude.ToString(),
+                    currentTrialConditions.width.ToString(),
+                    currentTrialConditions.numQuadrants.ToString(),
+                    totalMovementTime.ToString(),
+                    trialMisclicks.ToString(),
+                };
+
+            CSVManager.AppendToCSV(data);
+
+            // Could replace this logic to route to some "End" scene with "Thank you" text 
+            if (currentTrialIndex == trialSequence.Count())
+            {
+                studyOver = true;
+                return;
+            }
 
             targetManager.DestroyAllTargets();
             targetManager.SpawnStartTarget();
@@ -179,7 +209,7 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
-        // 4x3x4xreps = 48 x rep trials 
+        // 3x3x4xreps = 36 x reps trials 
         return new StudySettings(
             new List<float> { 4f, 8f, 16f },              // Amplitudes
             new List<float> { 0.5f, 1f, 1.5f },           // Widths
