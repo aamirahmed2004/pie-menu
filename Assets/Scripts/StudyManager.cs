@@ -99,7 +99,7 @@ public struct TrialConditions       // These are the factors that affect how the
 {
     public float amplitude;                   // Distance from the center
     public GroupingType groupingType;         // Random zones or predefined "ordered" zones
-    public float targetToHitboxRatio;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
+    public float width;                 // Ratio of effective width to target size for dynamic hitbox resizing and/or increasing space between icons
 }
 
 public enum CursorType
@@ -124,25 +124,25 @@ public enum GroupingType
 public class StudySettings
 {
     public List<float> amplitudes;
-    public List<float> targetToHitboxRatios; // denotes the constant scaling factor based on which we increase both the gap between icons and the hitbox of each icon
+    public List<float> widths; // denotes the constant scaling factor based on which we increase both the gap between icons and the hitbox of each icon
     // public List<bool> recent; idk if we're going with this for factor
     public List<GroupingType> groupingTypes;
     public CursorType cursorType;
     public int repetitions;
 
-    public StudySettings(List<float> amplitudes, List<float> targetToHitboxRatios, List<GroupingType> groupingTypes, CursorType cursorType, int repetitions)
+    public StudySettings(List<float> amplitudes, List<float> widths, List<GroupingType> groupingTypes, CursorType cursorType, int repetitions)
     {
         this.amplitudes = amplitudes;
-        this.targetToHitboxRatios = targetToHitboxRatios;
+        this.widths = widths;
         this.groupingTypes = groupingTypes;
         this.cursorType = cursorType;
         this.repetitions = repetitions;
     }
     // Default constructor with 1 repetition
-    public StudySettings(List<float> amplitudes, List<float> targetToHitboxRatios, List<GroupingType> groupingTypes, CursorType cursorType)
+    public StudySettings(List<float> amplitudes, List<float> widths, List<GroupingType> groupingTypes, CursorType cursorType)
     {
         this.amplitudes = amplitudes;
-        this.targetToHitboxRatios = targetToHitboxRatios;
+        this.widths = widths;
         this.groupingTypes = groupingTypes;
         this.cursorType = cursorType;
         this.repetitions = 1;
@@ -152,9 +152,9 @@ public class StudySettings
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
         return new StudySettings(
-            new List<float> { 8f, 12f, 16f },                                           // Amplitudes
-            new List<float> { 1f, 1.5f, 2f },                                           // Target width to Hitbox ratios
-            new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // A trial can either have random groups or ordered groups 
+            new List<float> { 4f, 8f, 16f },                                            // Amplitudes
+            new List<float> { 0.5f, 0.75f, 1f },                                        // Widths
+            new List<GroupingType>() { GroupingType.Random, GroupingType.Ordered },     // Needs changing
             chosenCursor,                                                               // cursorType
             repetitions
         );
@@ -170,7 +170,7 @@ public class StudySettings
 
         for (int i = 0; i < studySettings.repetitions; i++)
         {
-            foreach (float targetRatio in studySettings.targetToHitboxRatios)
+            foreach (float targetRatio in studySettings.widths)
             {
                 foreach (float amp in studySettings.amplitudes)
                 {
@@ -178,7 +178,7 @@ public class StudySettings
                     {
                         amplitude = amp,
                         groupingType = GroupingType.Random,     
-                        targetToHitboxRatio = targetRatio,
+                        width = targetRatio,
                     });
                 }
                 
@@ -188,7 +188,7 @@ public class StudySettings
 
         for (int i = 0; i < studySettings.repetitions; i++)
         {
-            foreach (float targetRatio in studySettings.targetToHitboxRatios)
+            foreach (float targetRatio in studySettings.widths)
             {
                 foreach (float amp in studySettings.amplitudes)
                 {
@@ -196,7 +196,7 @@ public class StudySettings
                     {
                         amplitude = amp,
                         groupingType = GroupingType.Ordered,
-                        targetToHitboxRatio = targetRatio,
+                        width = targetRatio,
                     });
                 }
 
