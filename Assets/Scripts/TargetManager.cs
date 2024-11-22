@@ -145,17 +145,15 @@ public class TargetManager : MonoBehaviour
             // Get positions for each z-value (quadrant)
             List<Vector3> quadrantPositions = validPositions.Where(vector => (int) vector.z == quadrant).ToList();
             int targetCountPerQuadrant = 0;
-            while (targetCountPerQuadrant < ((int) numTargets/4) || quadrantPositions.Count == 0) // evenly distribute some targets between 4 quadrants
+            while (targetCountPerQuadrant < ((int) numTargets/4) && quadrantPositions.Count > 0) // evenly distribute some targets between 4 quadrants
             {
                 if (appIndex >= appNames.Length) appIndex = 0;
 
                 // Treat it like a queue
                 Vector3 position = quadrantPositions[0];
                 quadrantPositions.RemoveAt(0);
-
                 if (rand.Next(0, 4) == 2)
                 {
-                    quadrantPositions.RemoveAt(0);
                     quadrantPositions.Add(position);
                     continue;
                 }
@@ -170,17 +168,15 @@ public class TargetManager : MonoBehaviour
 
             // If target count is not a multiple of 4, there will be some targets left to add. Add them all to the top left quadrant.
             // At this point in the for loop, quadrant = 1 so quadrantPositions contains positions of targets in Q1. 
-            while (targetCount < numTargets || quadrantPositions.Count == 0)
+            while (targetCount < numTargets && quadrantPositions.Count > 0)
             {
                 // Repeated code but we can refactor later.
                 if (appIndex >= appNames.Length) appIndex = 0;
 
                 Vector3 position = quadrantPositions[0];
                 quadrantPositions.RemoveAt(0);
-
                 if (rand.Next(0, 4) == 2)
                 {
-                    quadrantPositions.RemoveAt(0);
                     quadrantPositions.Add(position);
                     continue;
                 }

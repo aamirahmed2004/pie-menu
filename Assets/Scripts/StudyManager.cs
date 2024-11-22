@@ -54,6 +54,7 @@ public class StudyManager : MonoBehaviour
         "A",
         "W",
         "Q",
+        "ID",
         "MT",
         "MissedClicks"
     };
@@ -122,6 +123,7 @@ public class StudyManager : MonoBehaviour
             + ", Total Errors: " + (trialMisclicks - 1)         // we subtract 1 because currently even clicking the right target increments the click counter.
             + ", Amplitude: " + currentTrialConditions.amplitude
             + ", Width: " + currentTrialConditions.width
+            + ", ID: " + Math.Round(Math.Log(currentTrialConditions.amplitude / currentTrialConditions.width + 1))
             + ", Quadrants: " + currentTrialConditions.quadrants
             );
 
@@ -133,6 +135,7 @@ public class StudyManager : MonoBehaviour
                     currentTrialConditions.amplitude.ToString(),
                     currentTrialConditions.width.ToString(),
                     currentTrialConditions.quadrants.ToString(),
+                    ((int) Math.Round(Math.Log(currentTrialConditions.amplitude / currentTrialConditions.width + 1))).ToString(),
                     totalMovementTime.ToString(),
                     trialMisclicks.ToString(),
                 };
@@ -194,8 +197,8 @@ public class StudySettings
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
         return new StudySettings(
-            new List<float> { 5f, 7.5f, 10f },                                           // Amplitudes
-            new List<float> { 0.5f, 0.75f, 1f },                                           // Target widths
+            new List<float> { 6f, 9f, 12f },                                           // Amplitudes
+            new List<float> { 0.5f, 1f, 1.5f },                                           // Target widths
             new List<int> { 1, 2, 3, 4 },     // Quadrants where targets spawn
             chosenCursor,                                                               // cursorType
             repetitions
