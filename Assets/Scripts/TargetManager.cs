@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -10,8 +9,7 @@ using Random = System.Random;
 public class TargetManager : MonoBehaviour
 {
     [SerializeField] private GameObject targetWithLabel;
-    [SerializeField] [Range(0.1f,10)] private float targetScale;
-
+    private float targetScale = 1.0f;
     private int numTargets = 24;
     private List<Target> targetList = new();
 
@@ -91,6 +89,8 @@ public class TargetManager : MonoBehaviour
         {
             for (var x = -columns/2; x < columns/2; x++)
             {
+                if ((new Vector2(x + targetWidth / 2, y + targetHeight / 2) - Vector2.zero).magnitude <= CircleManager.CircleRadius*1.1)
+                    continue;
                 var xval = x >= 0;
                 var yval = y >= 0;
                 var quadrant = 1;
@@ -115,13 +115,15 @@ public class TargetManager : MonoBehaviour
     
     public void SpawnTargets(TrialConditions trialConditions)
     {
+        targetScale = trialConditions.width;
+        GetTargetSize();
+        GenerateTargetPositions();
         int appIndex = 0;
         int targetCount = 0;
-
-        Debug.Log("Amplitude: " + trialConditions.amplitude + ", Ratio: " + trialConditions.targetToHitboxRatio + ", Grouping: " + trialConditions.groupingType);
+        Debug.Log("Amplitude: " + trialConditions.amplitude + ", Ratio: " + trialConditions.width + ", Quadrants: " + trialConditions.quadrants);
         
         // Pick the Target the user is meant to select first, retrieving the remaining allowed positions & the selected position
-        var (validPositions, primePosition) = PickTarget(trialConditions.amplitude);
+        var (validPositions, primePosition) = PickTarget(trialConditions.amplitude, trialConditions.quadrants);
         // Structure for recording the positions in each quadrant for centroid + bounding box data
         var zonesPositions = new Dictionary<int, List<Vector3>>();
         // Add the prime target's list first, then add it to the list of positions for its zone so it is factored into
@@ -132,7 +134,7 @@ public class TargetManager : MonoBehaviour
         var rand = new Random();
         
         // Start at quadrant 4 and go backwards to 1. Makes it easier to add remaining targets to the top left (since on a desktop the top left is often more dense).
-        for (int quadrant = 4; quadrant >= 1; quadrant--)
+        for (int quadrant = trialConditions.quadrants; quadrant >= 1; quadrant--)
         {
             // This may already exist due to selection of the target beforehand
             if (!zonesPositions.ContainsKey(quadrant))
@@ -143,7 +145,7 @@ public class TargetManager : MonoBehaviour
             // Get positions for each z-value (quadrant)
             List<Vector3> quadrantPositions = validPositions.Where(vector => (int) vector.z == quadrant).ToList();
             int targetCountPerQuadrant = 0;
-            while (targetCountPerQuadrant < ((int) numTargets/4)) // evenly distribute some targets between 4 quadrants
+            while (targetCountPerQuadrant < ((int) numTargets/4) || quadrantPositions.Count == 0) // evenly distribute some targets between 4 quadrants
             {
                 if (appIndex >= appNames.Length) appIndex = 0;
 
@@ -168,7 +170,7 @@ public class TargetManager : MonoBehaviour
 
             // If target count is not a multiple of 4, there will be some targets left to add. Add them all to the top left quadrant.
             // At this point in the for loop, quadrant = 1 so quadrantPositions contains positions of targets in Q1. 
-            while (targetCount < numTargets)
+            while (targetCount < numTargets || quadrantPositions.Count == 0)
             {
                 // Repeated code but we can refactor later.
                 if (appIndex >= appNames.Length) appIndex = 0;
@@ -259,9 +261,9 @@ public class TargetManager : MonoBehaviour
     {
         return Mathf.Abs((new Vector2(0, 0) - new Vector2(pos.x, pos.y)).magnitude - amplitude);
     }
-    private Tuple<List<Vector3>, Vector3> PickTarget(float amplitude)
+    private Tuple<List<Vector3>, Vector3> PickTarget(float amplitude, int numQuadrants = 4)
     {
-        var validPositions = new List<Vector3>(targetPositions);
+        var validPositions = new List<Vector3>(targetPositions).Where(pos => (int) pos.z <= numQuadrants).ToList();
         // Sort the targets based on their closeness to the desired amplitude (distance)
         validPositions.Sort((posA, posB) =>
         {
@@ -297,7 +299,7 @@ public class TargetManager : MonoBehaviour
     public void SpawnStartTarget()
     {
         startTargetObject = Instantiate(targetWithLabel, worldCentre, Quaternion.identity, transform);
-        startTargetObject.transform.localScale = Vector3.one * targetScale;
+        startTargetObject.transform.localScale = Vector3.one * 2.0f;
         startTargetObject.tag = "Target";
 
         var target = startTargetObject.GetComponentInChildren<Target>();
