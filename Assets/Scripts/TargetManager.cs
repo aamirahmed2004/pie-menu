@@ -135,7 +135,7 @@ public class TargetManager : MonoBehaviour
 
         // Spawn targets according to W
         float width = trialConditions.width;
-        // Pick Goal Target according to A
+            // Pick Goal Target according to A
         float amplitude = trialConditions.amplitude;
         // This value is a trial condition that limits which zones targets spawn in. If numQuadrants = 3, only zones 1 to 3 will spawn targets.
         int numQuadrants = 4;   // hard coded to 4 while I edit Amplitude logic. Would change trialConditions to pass in value, in upcoming PR.
