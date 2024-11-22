@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class CircleManager : MonoBehaviour
 {
+    public static float CircleRadius = 2.0f;
+    
     [SerializeField] private GameObject Segment;
     private List<Segment> segmentList = new();
     public bool circleActive = false;
@@ -21,7 +23,7 @@ public class CircleManager : MonoBehaviour
         if (circleActive && !isDrawn)
         {
             isDrawn = true;
-            DrawCircleWithSegments(360,2f, 4);
+            DrawCircleWithSegments(360, CircleRadius, 4);
         }
         else if (!circleActive && isDrawn)
         {
