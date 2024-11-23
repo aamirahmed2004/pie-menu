@@ -231,6 +231,10 @@ public class TargetManager : MonoBehaviour
             positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Average(),
             positions.ConvertAll(vec => vec.y * TargetSpacing * targetScale).Average()
         );
+        
+        Vector2 zoneCentre = zoneCentroids[quadrant];
+        Debug.Log("Zone Centres for quadrant " + quadrant + " " + zoneCentre);
+        StaticClass.setDictionary(quadrant - 1, zoneCentre);
         zoneBounds[quadrant] = new Vector4(
             Math.Max(-worldWidth/2,positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Min() - targetWidth),
             Math.Min(worldWidth/2, positions.ConvertAll(vec => vec.x * TargetSpacing * targetScale).Max() + targetWidth),

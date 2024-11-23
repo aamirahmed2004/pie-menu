@@ -60,8 +60,6 @@ public class Segment : MonoBehaviour
             boundingBoxes[i].transform.parent = transform;
             boundingBoxes[i].SetActive(false);
         }
-        
-        
     }
 
     // Update is called once per frame
@@ -73,9 +71,12 @@ public class Segment : MonoBehaviour
             var g = GameObject.Find("TargetManager");
             targetManager = g.GetComponent<TargetManager>(); 
             Debug.Log("Did we find the target manager? " + targetManager);
-            Debug.Log("Zone Centres: " + targetManager.zoneCentroids);
+            Debug.Log("Zone Centres: " + targetManager.zoneCentroids[1]);
         }
-
+        tpCoord = StaticClass.getZoneCentre(SegmentNumber);
+        // Debug.Log("In segment number, " + SegmentNumber + " and the position is " + StaticClass.getZoneCentre(SegmentNumber));
+        Debug.Log("In segment number, " + SegmentNumber + " and the position is " + tpCoord);
+        
         UpdateZoneParams();
     }
 
@@ -92,8 +93,6 @@ public class Segment : MonoBehaviour
     }
     
     public void DrawCircleSegment(int steps, int stepsPerSegments, float radius, int segmentNumber) {
-        
-        
         
         this.name = "Segment" + segmentNumber;
         this.SegmentNumber = segmentNumber;
@@ -195,10 +194,12 @@ public class Segment : MonoBehaviour
         {
             boundingBox.SetActive(true);
         }
+        Debug.Log("On mouse over, " + SegmentNumber + " and the position is " + tpCoord);
         if (Input.GetMouseButtonDown(0))
         {
             // when mouse left is pressed
-            Mouse.current.WarpCursorPosition(tpCoord);
+            Vector2 V = new Vector2(-12, 5);
+            Mouse.current.WarpCursorPosition(V);
         }
     }
 

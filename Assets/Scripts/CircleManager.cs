@@ -41,13 +41,14 @@ public class CircleManager : MonoBehaviour
         for (int segmentNumber = 0; segmentNumber < numSegments; segmentNumber++)
         {
             var segment = Instantiate(Segment, new Vector3(0,0,0), Quaternion.identity);
-            Debug.Log(segmentNumber);
+            
             segmentList.Add(segment.GetComponent<Segment>());
+            segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             // segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             segmentList[segmentNumber].DrawCircleSegment(
                 steps, stepsPerSegments, radius, segmentNumber
             ); // store this for the future just in case
-            segmentList[segmentNumber].setSegmentNumber(segmentNumber);
+            
         }
     }
     
