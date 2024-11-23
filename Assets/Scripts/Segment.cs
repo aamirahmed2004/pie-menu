@@ -24,8 +24,6 @@ public class Segment : MonoBehaviour
     private Gradient originalColor = new Gradient();
     private Color[] Colors = { Color.magenta, Color.cyan, Color.green, Color.blue };
     
-    private Vector2 tpCoord;
-    
     [SerializeField] private Material lineMaterial;
     // Start is called before the first frame update
     void Start()
@@ -67,16 +65,9 @@ public class Segment : MonoBehaviour
     {
         if (!targetManager)
         {
-            Debug.Log("Target Manager not found");
             var g = GameObject.Find("TargetManager");
             targetManager = g.GetComponent<TargetManager>(); 
-            Debug.Log("Did we find the target manager? " + targetManager);
-            Debug.Log("Zone Centres: " + targetManager.zoneCentroids[1]);
         }
-        tpCoord = StaticClass.getZoneCentre(SegmentNumber);
-        // Debug.Log("In segment number, " + SegmentNumber + " and the position is " + StaticClass.getZoneCentre(SegmentNumber));
-        Debug.Log("In segment number, " + SegmentNumber + " and the position is " + tpCoord);
-        
         UpdateZoneParams();
     }
 
@@ -149,10 +140,6 @@ public class Segment : MonoBehaviour
             colliderPoints2D[i] = new Vector2(colliderPoints[i].x, colliderPoints[i].y); // convert this to collider points
         }
         segmentCollider.points = colliderPoints2D; // set the collider points
-        
-
-        // tpCoord = targetManager.zoneCentroids[SegmentNumber + 1];
-        
     }
 
     private void DrawZoneOutline()
@@ -179,7 +166,6 @@ public class Segment : MonoBehaviour
 
     private void OnMouseExit()
     {
-        
         segmentRenderer.colorGradient = originalColor;
         foreach (var boundingBox in boundingBoxes)
         {
@@ -194,12 +180,10 @@ public class Segment : MonoBehaviour
         {
             boundingBox.SetActive(true);
         }
-        Debug.Log("On mouse over, " + SegmentNumber + " and the position is " + tpCoord);
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && Camera.main)
         {
             // when mouse left is pressed
-            Vector2 V = new Vector2(-12, 5);
-            Mouse.current.WarpCursorPosition(V);
+            Mouse.current.WarpCursorPosition(Camera.main.WorldToScreenPoint(new Vector3(goalPosition.x, goalPosition.y, 0)));
         }
     }
 
