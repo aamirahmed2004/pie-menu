@@ -8,6 +8,7 @@ public class CircleManager : MonoBehaviour
     public static float CircleRadius = 2.0f;
     
     [SerializeField] private GameObject Segment;
+    
     private List<Segment> segmentList = new();
     public bool circleActive = false;
     private bool isDrawn = false;
@@ -55,10 +56,12 @@ public class CircleManager : MonoBehaviour
             var segment = Instantiate(Segment, new Vector3(0,0,0), Quaternion.identity);
             segment.transform.SetParent(gameObject.transform, true);
             segmentList.Add(segment.GetComponent<Segment>());
+            segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             // segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             segmentList[segmentNumber].DrawCircleSegment(
                 steps, stepsPerSegments, radius, segmentNumber
             ); // store this for the future just in case
+            
         }
     }
     
