@@ -10,6 +10,7 @@ public class Target : MonoBehaviour
     private bool canHover;
 
     private bool isGoal = false;
+    private bool isStart = false;
 
     void Start()
     {
@@ -20,6 +21,14 @@ public class Target : MonoBehaviour
 
     public void SetGoalTarget()
     {
+        isGoal = true;
+        // Debug.Log("Set to Goal!");
+        ChangeColor(Color.red);
+    }
+    
+    public void SetStartTarget()
+    {
+        isStart = true;
         isGoal = true;
         // Debug.Log("Set to Goal!");
         ChangeColor(Color.red);
@@ -47,6 +56,18 @@ public class Target : MonoBehaviour
         onSelect = true;
         sprite.color = Color.green;
         StartCoroutine(DestroyGameObject(0.1f));
+        if (isGoal && !isStart)
+        {
+            var sm = GameObject.Find("StudyManager").GetComponent<StudyManager>();
+            if (sm.TrialState == TrialState.Active)
+                sm.TrialState = TrialState.Ended;
+        } 
+        else if (isStart)
+        {
+            var sm = GameObject.Find("StudyManager").GetComponent<StudyManager>();
+            if (sm.TrialState == TrialState.Limbo)
+                sm.TrialState = TrialState.Start; 
+        }
     }
 
     public void ChangeColor(Color color)
@@ -68,9 +89,14 @@ public class Target : MonoBehaviour
     public IEnumerator DestroyGameObject(float seconds)
     {
         yield return new WaitForSeconds(seconds);
+        DestroyGameObject();
+    }
 
+    public void DestroyGameObject()
+    {
         // Note that the parent GameObject is TargetWithLabel, which has children Target (this) and Label.
         // Find the Label gameObject in the children of the parent (i.e. should be a sibling component, but I couldnt find a function to directly look for siblings)
+
         TextMeshPro label = this.transform.parent.GetComponentInChildren<TextMeshPro>();
         if (label != null) Destroy(label.gameObject);
 
