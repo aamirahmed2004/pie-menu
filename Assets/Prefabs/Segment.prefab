@@ -203,3 +203,5 @@ MonoBehaviour:
   segmentText: {fileID: 4870980756145297157, guid: dd70481baff7b3d4bb6b09dbfa049f5e, type: 3}
   segmentRenderer: {fileID: -5317874685529167752}
   segmentCollider: {fileID: 5825655252318838235}
+  targetManagerObject: {fileID: 6040006640322414262}
+  lineMaterial: {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}

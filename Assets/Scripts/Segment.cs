@@ -2,8 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.InputSystem;
+
 
 public class Segment : MonoBehaviour
 {
@@ -12,29 +15,45 @@ public class Segment : MonoBehaviour
     public LineRenderer segmentRenderer;
     public PolygonCollider2D segmentCollider;
     private int SegmentNumber;
-    private TargetManager targetManager;
+    public TargetManager targetManager;
     private Vector2 goalPosition;
     private Vector4 zoneBounds;
     private GameObject[] boundingBoxes = new GameObject[4];
     private Gradient boundingBoxColor = new Gradient();
     Gradient onHover = new Gradient();
+    private Gradient originalColor = new Gradient();
+    private Color[] Colors = { Color.magenta, Color.cyan, Color.green, Color.blue };
+    
+    [SerializeField] private Material lineMaterial;
     // Start is called before the first frame update
     void Start()
     {
+        
         float alpha = 1.0f;
         onHover.SetKeys(
             new GradientColorKey[] { new GradientColorKey(Color.yellow, 0.0f), new GradientColorKey(Color.yellow, 1.0f) },
             new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
         );
-        boundingBoxColor.SetKeys(
-            new GradientColorKey[] { new GradientColorKey(Color.magenta, 0.0f), new GradientColorKey(Color.magenta, 0.0f)},
+        Color segmentColor = Colors[SegmentNumber];
+        
+        originalColor.SetKeys(
+            new GradientColorKey[] { new GradientColorKey(segmentColor, 0.0f), new GradientColorKey(segmentColor, 0.0f)},
             new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f)}
-        );
+            );
+        segmentRenderer.colorGradient = originalColor;
         for (int i = 0; i < 4; i++)
         {
             boundingBoxes[i] = new GameObject();
-            boundingBoxes[i].name = "BoundingBox" + i;
+            boundingBoxes[i].name = "BoundingBoxLine" + i;
+            
+            boundingBoxColor.SetKeys(
+                new GradientColorKey[]
+                    { new GradientColorKey(segmentColor, 0.0f), new GradientColorKey(segmentColor, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
+            );
+            
             var lr = boundingBoxes[i].AddComponent<LineRenderer>();
+            lr.material = lineMaterial;
             lr.colorGradient = boundingBoxColor;
             boundingBoxes[i].transform.parent = transform;
             boundingBoxes[i].SetActive(false);
@@ -47,9 +66,8 @@ public class Segment : MonoBehaviour
         if (!targetManager)
         {
             var g = GameObject.Find("TargetManager");
-            targetManager = g.GetComponent<TargetManager>();   
+            targetManager = g.GetComponent<TargetManager>(); 
         }
-
         UpdateZoneParams();
     }
 
@@ -66,26 +84,12 @@ public class Segment : MonoBehaviour
     }
     
     public void DrawCircleSegment(int steps, int stepsPerSegments, float radius, int segmentNumber) {
+        
         this.name = "Segment" + segmentNumber;
         this.SegmentNumber = segmentNumber;
         segmentRenderer.positionCount = stepsPerSegments + 1;
-        Gradient originalColour= new Gradient();
-        float alpha = 1.0f;
-        if (segmentNumber % 2 == 0)
-        {
-            originalColour.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-            );
-        }
-        else
-        {
-            originalColour.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(Color.grey, 0.0f), new GradientColorKey(Color.grey, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-            );
-        }
-        segmentRenderer.colorGradient = originalColour;
+        
+        segmentRenderer.colorGradient = originalColor;
         int startStep = segmentNumber * stepsPerSegments;
         int endStep = (segmentNumber + 1) * stepsPerSegments;
         
@@ -162,23 +166,7 @@ public class Segment : MonoBehaviour
 
     private void OnMouseExit()
     {
-        Gradient originalColour= new Gradient();
-        float alpha = 1.0f;
-        if (SegmentNumber % 2 == 0)
-        {
-            originalColour.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(Color.white, 0.0f), new GradientColorKey(Color.white, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-            );
-        }
-        else
-        {
-            originalColour.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(Color.grey, 0.0f), new GradientColorKey(Color.grey, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(alpha, 0.0f), new GradientAlphaKey(alpha, 1.0f) }
-            );
-        }
-        segmentRenderer.colorGradient = originalColour;
+        segmentRenderer.colorGradient = originalColor;
         foreach (var boundingBox in boundingBoxes)
         {
             boundingBox.SetActive(false);
@@ -191,6 +179,11 @@ public class Segment : MonoBehaviour
         foreach (var boundingBox in boundingBoxes)
         {
             boundingBox.SetActive(true);
+        }
+        if (Input.GetMouseButtonDown(0) && Camera.main)
+        {
+            // when mouse left is pressed
+            Mouse.current.WarpCursorPosition(Camera.main.WorldToScreenPoint(new Vector3(goalPosition.x, goalPosition.y, 0)));
         }
     }
 
