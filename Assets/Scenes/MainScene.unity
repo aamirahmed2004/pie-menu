@@ -168,6 +168,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetWithLabel: {fileID: 9069779975850492026, guid: 0f4561498d80b914d9fb686f36e540e2, type: 3}
   targetScale: 1
+  startTarget: {fileID: 0}
+  primeTarget: {fileID: 0}
 --- !u!1 &570569290
 GameObject:
   m_ObjectHideFlags: 0
@@ -242,6 +244,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Segment: {fileID: 6040006640322414262, guid: 60da392a839822e4896d6145dea56098, type: 3}
+  circleActive: 0
 --- !u!4 &595626910
 Transform:
   m_ObjectHideFlags: 0
@@ -288,6 +291,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   targetManager: {fileID: 82630037}
   pointCursor: {fileID: 570569290}
+  TrialState: 0
 --- !u!4 &1308907810
 Transform:
   m_ObjectHideFlags: 0

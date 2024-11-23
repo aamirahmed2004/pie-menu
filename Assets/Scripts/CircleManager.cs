@@ -5,19 +5,32 @@ using UnityEngine;
 
 public class CircleManager : MonoBehaviour
 {
+    public static float CircleRadius = 2.0f;
+    
     [SerializeField] private GameObject Segment;
     
     private List<Segment> segmentList = new();
-    
+    public bool circleActive = false;
+    private bool isDrawn = false;
     // Start is called before the first frame update
     void Start()
     {
-        DrawCircleWithSegments(360,2f, 4);   
+        circleActive = false;
     }
 
     // Update is called once per frame
     void Update()
     {
+        if (circleActive && !isDrawn)
+        {
+            isDrawn = true;
+            DrawCircleWithSegments(360, CircleRadius, 4);
+        }
+        else if (!circleActive && isDrawn)
+        {
+            isDrawn = false;
+            DestroySegments();
+        }
         /*
         if ((Input.GetMouseButtonDown(0) && Input.GetMouseButtonDown(1)) || Input.GetMouseButtonDown(4))
         {
@@ -41,7 +54,7 @@ public class CircleManager : MonoBehaviour
         for (int segmentNumber = 0; segmentNumber < numSegments; segmentNumber++)
         {
             var segment = Instantiate(Segment, new Vector3(0,0,0), Quaternion.identity);
-            
+            segment.transform.SetParent(gameObject.transform, true);
             segmentList.Add(segment.GetComponent<Segment>());
             segmentList[segmentNumber].setSegmentNumber(segmentNumber);
             // segmentList[segmentNumber].setSegmentNumber(segmentNumber);

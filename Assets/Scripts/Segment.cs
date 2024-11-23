@@ -112,7 +112,7 @@ public class Segment : MonoBehaviour
             // however, step size is determined by stepsPerSegments (so generally 10)
             // therefore when we set position, we must use currentstep - startStep to create the vertex
             float circumferenceProgress = (float) currentstep / steps;
-            float currentRadian = circumferenceProgress * 2 * Mathf.PI;
+            float currentRadian = circumferenceProgress * 2 * Mathf.PI + Mathf.PI/4;
 
             float xScaled = Mathf.Cos(currentRadian); // how far x it goes basically
             float yScaled = Mathf.Sin(currentRadian); // how far y it goes basically
@@ -130,7 +130,7 @@ public class Segment : MonoBehaviour
                 }
                 currentText = Instantiate(segmentText, centrePosition, Quaternion.identity);
                 currentText.GetComponent<TextMeshPro>().text = (SegmentNumber + 1).ToString();
-                currentText.transform.parent = transform;
+                currentText.transform.SetParent(transform, worldPositionStays: false);
             }
 
             Vector3 currentPosition = new Vector3(x, y, 0);
