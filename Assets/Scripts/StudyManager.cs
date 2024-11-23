@@ -210,8 +210,7 @@ public class StudyManager : MonoBehaviour
             var csvText = sb.ToString();
             var path = Path.Combine(folder, $"participant{participantID}.csv");
             WriteToFile(path, csvText);
-            Debug.Log("Writing to files");
-        
+  
             var trackPath = cursorType == CursorType.PointCursor
                 ? Path.Combine(folder, "pointTrials.csv")
                 : Path.Combine(folder, "pieTrials.csv");
