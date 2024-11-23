@@ -271,13 +271,13 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
-        return new StudySettings(
-            new List<float> {1f},
-            new List<float> {1f},
-            new List<int> {4},
-            chosenCursor,
-            1
-        );
+        // return new StudySettings(
+        //     new List<float> {1f},
+        //     new List<float> {1f},
+        //     new List<int> {4},
+        //     chosenCursor,
+        //     1
+        // );
         
         return new StudySettings(
             new List<float> { 6f, 9f, 12f },                                           // Amplitudes
