@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
+using System.Text.RegularExpressions;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Button = UnityEngine.UI.Button;
 using Random = UnityEngine.Random;
 
 public enum TrialState
@@ -13,6 +19,25 @@ public enum TrialState
     Limbo,
     Active,
     Ended,
+    Cleanup,
+    StudyOver,
+}
+
+public record TrialRecord
+{
+    public int PID { get; set; }
+    public int CT { get; set; }
+    public float A { get; set; }
+    public float W { get; set; }
+    public int Q { get; set; }
+
+    public int ID()
+    {
+        return (int) Math.Round(Math.Log(A / W + 1));
+    }
+    
+    public float MT { get; set; }
+    public int ERR { get; set; }
 }
 
 public class StudyManager : MonoBehaviour
@@ -26,54 +51,79 @@ public class StudyManager : MonoBehaviour
     private int numTargetsOnScreen;
     private int numTotalTargets;
     private bool isStartTargetSpawned;
-    private int participantID;
+    private int participantID = 0;
 
     private Vector2 screenCentre;
     private Camera mainCamera;
     private GameObject centerTargetObject;
-    private CursorType originalCursor;
-    private CursorType cursorType = CursorType.PieCursor;
+    private CursorType cursorType = CursorType.PointCursor;
     private CircleManager circleManager;
+    private GameObject canvas;
     
     private StudySettings studySettings;
     private List<TrialConditions> trialSequence;
     private TrialConditions currentTrialConditions;
+    private readonly List<TrialRecord> trialRecords = new();
 
     private int currentTrialIndex;
     private float movementStartTime = 0;
     private float totalMovementTime = 0;
     private int trialMisclicks = 0;
 
-    bool studyOver = false;
+    private string folder;
+    private const string Header = "PID,CT,A,W,Q,ID,MT,ERR";
 
-    // For CSV logging
-    private string[] header =
+    private bool startStudy;
+    private bool writingResults;
+
+    private void OnButtonClick(CursorType cursorType)
     {
-        "PID",
-        "CT",
-        "A",
-        "W",
-        "Q",
-        "ID",
-        "MT",
-        "MissedClicks"
-    };
+        if (participantID == 0)
+            return;
+        canvas.SetActive(false);
+        this.cursorType = cursorType;
+        startStudy = true;
+    }
 
     private void Start()
     {
+#if UNITY_EDITOR
+        folder = Application.streamingAssetsPath;
+# else 
+        folder = Application.dataPath;
+#endif   
+        if (!Directory.Exists(folder))
+        {
+            Directory.CreateDirectory(folder);
+        }
 
-        // TODO: change these two lines accordingly when copying this over to Pie Menu scene
-        participantID = 1;
-        originalCursor = CursorType.PointCursor;
-
-        CSVManager.SetFilePath(originalCursor.ToString());
+        canvas = GameObject.Find("Canvas");
+        var errorText = GameObject.Find("ErrorText").GetComponent<TMP_Text>();
+        var participantText = GameObject.Find("ParticipantID").GetComponent<TMP_InputField>();
+        participantText.onValueChanged.AddListener((text) =>
+        {
+            try
+            {
+                participantID = int.Parse(text);
+                if (participantID == 0)
+                {
+                    throw new Exception();
+                }
+                errorText.text = "";
+            }
+            catch (Exception e)
+            {
+                errorText.text = "Invalid participant ID";
+            }
+        });
         
-        // If the file doesnt exist, create a file and append header
-        if (CSVManager.ReadFromCSV(CSVManager.filePath) == null)
-            CSVManager.AppendToCSV(header);
+        var pointButton = GameObject.Find("PointCursor").GetComponent<Button>();
+        var pieButton = GameObject.Find("PieCursor").GetComponent<Button>();
+        pointButton.onClick.AddListener(() => OnButtonClick(CursorType.PointCursor));
+        pieButton.onClick.AddListener(() => OnButtonClick(CursorType.PieCursor));
 
         // See the StudySettings class below to make changes to A,W,Q. 
-        studySettings = StudySettings.GetStudySettings(originalCursor, 2);          // Argument of 2: repetitions per trial condition      
+        studySettings = StudySettings.GetStudySettings(cursorType, 2);          // Argument of 2: repetitions per trial condition      
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
         Debug.Log("Number of trials: " + trialSequence.Count);
         currentTrialIndex = 0;
@@ -82,11 +132,30 @@ public class StudyManager : MonoBehaviour
         Debug.Log("Circlemanager: "+ circleManager);
     }
 
+    private void WriteToFile(string path, string csvContent)
+    {
+        if (!File.Exists(path))
+        {
+            using var writer = new StreamWriter(path, false);
+            writer.Write(csvContent);
+            writer.Close();
+        }
+        else
+        {
+            using var writer = new StreamWriter(path, true);
+            writer.Write(csvContent.Remove(0, Header.Length));
+            writer.Close();
+        }
+    }
+    
     private void Update()
     {
+        if (!startStudy || TrialState == TrialState.StudyOver) return;
+        
         targetObjectsOnScreen = targetManager.GetAllTargets();
         numTargetsOnScreen = targetObjectsOnScreen.Length;
-        currentTrialConditions = trialSequence[currentTrialIndex];
+        currentTrialConditions = currentTrialIndex < trialSequence.Count ? trialSequence[currentTrialIndex] : new TrialConditions();
+        
         switch (TrialState)
         {
         case TrialState.None: 
@@ -103,7 +172,6 @@ public class StudyManager : MonoBehaviour
             }
             movementStartTime = Time.time;
             targetManager.SpawnTargets(currentTrialConditions); 
-            currentTrialIndex++;
             TrialState = TrialState.Active;
             break;
         case TrialState.Active:
@@ -115,34 +183,42 @@ public class StudyManager : MonoBehaviour
             targetManager.DestroyAllTargets();
             targetManager.ResetZones();
             targetManager.primeTarget = null; // Useful for distinguishing 'null' vs. destroyed!
-            
-            Debug.Log("Data: "
-            + "\nPID: " + participantID
-            + ", CT: " + originalCursor                         // CursorType.PieMenu = 1, CursorType.PointCursor = 2
-            + ", Movement Time: " + totalMovementTime + "ms"
-            + ", Total Errors: " + (trialMisclicks - 1)         // we subtract 1 because currently even clicking the right target increments the click counter.
-            + ", Amplitude: " + currentTrialConditions.amplitude
-            + ", Width: " + currentTrialConditions.width
-            + ", ID: " + Math.Round(Math.Log(currentTrialConditions.amplitude / currentTrialConditions.width + 1))
-            + ", Quadrants: " + currentTrialConditions.quadrants
-            );
 
-            int CT = originalCursor == CursorType.PieCursor ? 1 : 2;
-            string[] data =
-                {
-                    participantID.ToString(),
-                    CT.ToString(),
-                    currentTrialConditions.amplitude.ToString(),
-                    currentTrialConditions.width.ToString(),
-                    currentTrialConditions.quadrants.ToString(),
-                    ((int) Math.Round(Math.Log(currentTrialConditions.amplitude / currentTrialConditions.width + 1))).ToString(),
-                    totalMovementTime.ToString(),
-                    trialMisclicks.ToString(),
-                };
-
-            CSVManager.AppendToCSV(data);
-
-            TrialState = TrialState.None;
+            var rec = new TrialRecord
+            {
+                PID = participantID,
+                CT = cursorType == CursorType.PieCursor ? 2 : 1,
+                A = currentTrialConditions.amplitude,
+                W = currentTrialConditions.width,
+                Q = currentTrialConditions.quadrants,
+                MT = totalMovementTime,
+                ERR = trialMisclicks,
+            };
+            trialRecords.Add(rec);
+            currentTrialIndex++;
+            TrialState = currentTrialIndex >= trialSequence.Count ? TrialState.Cleanup : TrialState.None;
+            break;
+        case TrialState.Cleanup:
+            if (writingResults) return;
+            writingResults = true;
+            TrialState = TrialState.StudyOver;
+            var sb = new StringBuilder(Header);
+            foreach (var record in trialRecords)
+            {
+                sb.Append($"\n{participantID},{record.CT},{record.A},{record.W},{record.Q},{record.ID()},{record.MT},{record.ERR}");
+            }
+            var csvText = sb.ToString();
+            var path = Path.Combine(folder, $"participant{participantID}.csv");
+            WriteToFile(path, csvText);
+            Debug.Log("Writing to files");
+        
+            var trackPath = cursorType == CursorType.PointCursor
+                ? Path.Combine(folder, "pointTrials.csv")
+                : Path.Combine(folder, "pieTrials.csv");
+            WriteToFile(trackPath, csvText);
+        
+            var allPath = Path.Combine(folder, "allTrials.csv");
+            WriteToFile(allPath, csvText);
             break;
         }
     }
@@ -196,6 +272,14 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
+        return new StudySettings(
+            new List<float> {1f},
+            new List<float> {1f},
+            new List<int> {4},
+            chosenCursor,
+            1
+        );
+        
         return new StudySettings(
             new List<float> { 6f, 9f, 12f },                                           // Amplitudes
             new List<float> { 0.5f, 1f, 1.5f },                                           // Target widths
