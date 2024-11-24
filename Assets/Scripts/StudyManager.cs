@@ -33,7 +33,7 @@ public record TrialRecord
 
     public int ID()
     {
-        return (int) Math.Round(Math.Log(A / W + 1));
+        return Mathf.RoundToInt((float) Math.Log(A / W + 1, 2));
     }
     
     public float MT { get; set; }
@@ -59,6 +59,7 @@ public class StudyManager : MonoBehaviour
     private CursorType cursorType = CursorType.PointCursor;
     private CircleManager circleManager;
     private GameObject canvas;
+    private GameObject resetCanvas;
     
     private StudySettings studySettings;
     private List<TrialConditions> trialSequence;
@@ -74,12 +75,15 @@ public class StudyManager : MonoBehaviour
     private const string Header = "PID,CT,A,W,Q,ID,MT,ERR";
 
     private bool startStudy;
-    private bool writingResults;
 
     private void OnButtonClick(CursorType cursorType)
     {
         if (participantID == 0)
+        {
+            var errorText = GameObject.Find("ErrorText").GetComponent<TMP_Text>();
+            errorText.text = "Invalid participant ID";
             return;
+        }
         canvas.SetActive(false);
         this.cursorType = cursorType;
         startStudy = true;
@@ -98,6 +102,9 @@ public class StudyManager : MonoBehaviour
         }
 
         canvas = GameObject.Find("Canvas");
+        resetCanvas = GameObject.Find("ResetCanvas");
+        circleManager = GameObject.Find("CircleManager")?.GetComponent<CircleManager>();
+        
         var errorText = GameObject.Find("ErrorText").GetComponent<TMP_Text>();
         var participantText = GameObject.Find("ParticipantID").GetComponent<TMP_InputField>();
         participantText.onValueChanged.AddListener((text) =>
@@ -119,17 +126,34 @@ public class StudyManager : MonoBehaviour
         
         var pointButton = GameObject.Find("PointCursor").GetComponent<Button>();
         var pieButton = GameObject.Find("PieCursor").GetComponent<Button>();
+        var reset = GameObject.Find("Reset").GetComponent<Button>();
+        
         pointButton.onClick.AddListener(() => OnButtonClick(CursorType.PointCursor));
         pieButton.onClick.AddListener(() => OnButtonClick(CursorType.PieCursor));
+        reset.onClick.AddListener(() =>
+        {
+            trialRecords.Clear();
+            resetCanvas.SetActive(false);
+            canvas.SetActive(true);
+            TrialState = TrialState.None;
+            currentTrialIndex = 0;
+            startStudy = false;
+        });
+        
+        resetCanvas.SetActive(false);
+        PrepareStudy();
+    }
 
-        // See the StudySettings class below to make changes to A,W,Q. 
-        studySettings = StudySettings.GetStudySettings(cursorType, 2);          // Argument of 2: repetitions per trial condition      
+    private void PrepareStudy()
+    {
+        studySettings = StudySettings.GetStudySettings(cursorType, 1);          // Argument of 2: repetitions per trial condition    
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
-        Debug.Log("Number of trials: " + trialSequence.Count);
+        
+        var ids = trialSequence.ConvertAll(t => Mathf.RoundToInt((float) Math.Log(t.amplitude / t.width + 1, 2))).Distinct();
+        Debug.Log("Unique IDs: " + string.Join(",", ids));
+        
         currentTrialIndex = 0;
         numTotalTargets = targetManager.GetNumTotalTargets();
-        circleManager = GameObject.Find("CircleManager")?.GetComponent<CircleManager>();
-        Debug.Log("Circlemanager: "+ circleManager);
     }
 
     private void WriteToFile(string path, string csvContent)
@@ -159,7 +183,6 @@ public class StudyManager : MonoBehaviour
         switch (TrialState)
         {
         case TrialState.None: 
-            Debug.Log(circleManager);
             circleManager.circleActive = false;
             targetManager.SpawnStartTarget();
             TrialState = TrialState.Limbo;
@@ -199,8 +222,6 @@ public class StudyManager : MonoBehaviour
             TrialState = currentTrialIndex >= trialSequence.Count ? TrialState.Cleanup : TrialState.None;
             break;
         case TrialState.Cleanup:
-            if (writingResults) return;
-            writingResults = true;
             TrialState = TrialState.StudyOver;
             var sb = new StringBuilder(Header);
             foreach (var record in trialRecords)
@@ -218,6 +239,8 @@ public class StudyManager : MonoBehaviour
         
             var allPath = Path.Combine(folder, "allTrials.csv");
             WriteToFile(allPath, csvText);
+            circleManager.circleActive = false;
+            resetCanvas.SetActive(true);
             break;
         }
     }
@@ -271,13 +294,13 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
-        // return new StudySettings(
-        //     new List<float> {1f},
-        //     new List<float> {1f},
-        //     new List<int> {4},
-        //     chosenCursor,
-        //     1
-        // );
+        return new StudySettings(
+            new List<float> {1f},
+            new List<float> {1f},
+            new List<int> {4},
+            chosenCursor,
+            1
+        );
         
         return new StudySettings(
             new List<float> { 6f, 9f, 12f },                                           // Amplitudes

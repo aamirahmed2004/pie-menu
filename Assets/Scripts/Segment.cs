@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -13,7 +14,7 @@ public class Segment : MonoBehaviour
     [SerializeField] private GameObject segmentText;
     private GameObject currentText;
     public LineRenderer segmentRenderer;
-    public PolygonCollider2D segmentCollider;
+    public BoxCollider2D segmentCollider;
     private int SegmentNumber;
     public TargetManager targetManager;
     private Vector2 goalPosition;
@@ -97,6 +98,7 @@ public class Segment : MonoBehaviour
         var actualIndex = 0;
         var interval = endStep - startStep;
         var createdText = false;
+        var positions = new List<Vector3>();
         for (int currentstep = startStep; currentstep <= endStep; currentstep++)
         {
             // currentstep determines the progress of the circumference
@@ -121,25 +123,25 @@ public class Segment : MonoBehaviour
                 }
                 currentText = Instantiate(segmentText, centrePosition, Quaternion.identity);
                 currentText.GetComponent<TextMeshPro>().text = (SegmentNumber + 1).ToString();
-                currentText.transform.SetParent(transform, worldPositionStays: false);
+                currentText.transform.SetParent(transform, worldPositionStays: true);
             }
 
             Vector3 currentPosition = new Vector3(x, y, 0);
             segmentRenderer.SetPosition(currentstep - startStep, currentPosition);
+            positions.Add(currentPosition);
             actualIndex++;
         }
-        
-        
-        // sort the points to form a polygon
-        Mesh mesh = new Mesh();
-        segmentRenderer.BakeMesh(mesh, true);
-        Vector3[] colliderPoints = mesh.vertices; // get the vertices that encompass the segment
-        Vector2[] colliderPoints2D = new Vector2[colliderPoints.Length];
-        for (int i = 0; i < colliderPoints.Length; i++)
-        {
-            colliderPoints2D[i] = new Vector2(colliderPoints[i].x, colliderPoints[i].y); // convert this to collider points
-        }
-        segmentCollider.points = colliderPoints2D; // set the collider points
+
+        var center = new Vector2(
+            positions.ConvertAll(v => v.x).Average(),
+            positions.ConvertAll(v => v.y).Average()
+        );
+        var size = new Vector2(
+            positions.ConvertAll(v => v.x).Max() - positions.ConvertAll(v => v.x).Min(),
+            positions.ConvertAll(v => v.y).Max() - positions.ConvertAll(v => v.y).Min()
+        );
+        segmentCollider.offset = center;
+        segmentCollider.size = size * (segmentRenderer.startWidth * 1.5f);
     }
 
     private void DrawZoneOutline()
