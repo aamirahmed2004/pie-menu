@@ -146,7 +146,7 @@ public class StudyManager : MonoBehaviour
 
     private void PrepareStudy()
     {
-        studySettings = StudySettings.GetStudySettings(cursorType, 1);          // Argument of 2: repetitions per trial condition    
+        studySettings = StudySettings.GetStudySettings(cursorType, 2);          // Argument of 2: repetitions per trial condition    
         trialSequence = StudySettings.CreateSequenceOfTrials(studySettings);
         
         var ids = trialSequence.ConvertAll(t => Mathf.RoundToInt((float) Math.Log(t.amplitude / t.width + 1, 2))).Distinct();
@@ -294,13 +294,13 @@ public class StudySettings
     // Returns the settings we choose for the study. 
     public static StudySettings GetStudySettings(CursorType chosenCursor, int repetitions)
     {
-        return new StudySettings(
-            new List<float> {1f},
-            new List<float> {1f},
-            new List<int> {4},
-            chosenCursor,
-            1
-        );
+        // return new StudySettings(
+        //     new List<float> {1f},
+        //     new List<float> {1f},
+        //     new List<int> {4},
+        //     chosenCursor,
+        //     1
+        // );
         
         return new StudySettings(
             new List<float> { 6f, 9f, 12f },                                           // Amplitudes
